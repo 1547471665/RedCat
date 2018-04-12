@@ -9,6 +9,7 @@
 namespace App\Http\Controllers;
 
 
+use App\Models\ForceHistory;
 use App\Models\TempReward;
 use App\User;
 use Illuminate\Http\Request;
@@ -24,6 +25,13 @@ class UserController extends Controller
     {
         $this->salt = "userloginregister";
         $this->_config = \Illuminate\Support\Facades\Cache::get('setting');
+    }
+
+    public function ForceList()
+    {
+        $user = Auth::user();
+        $data = ForceHistory::where('user_id', $user->id)->get()->toArray();
+        return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
     }
 
     /**
@@ -55,7 +63,6 @@ class UserController extends Controller
 //                $user->api_token = $token;
                 $user->login_time = date('Y-m-d');
                 $user->save();
-                self::LoginRewardForce($user);
                 return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['api_token' => $user->api_token]]);
             } else {
                 return abort(40100, error_code(40100));
@@ -109,16 +116,30 @@ class UserController extends Controller
      */
     public function info()
     {
-        return Auth::user();
+        $user = Auth::user();
+        $invitation_number = User::where('invitation_id', $user->id)->count();
+        $force_value = ForceHistory::where('user_id', $user->id)->sum('force_value');
+        $temp_force_value = TempReward::where('user_id', $user->id)->where('type', 2)->sum('force');
+        $data = [
+            'user' => $user,
+            'invitation_num' => $invitation_number,
+            'force_value' => $force_value,
+            'temp_force_value' => $temp_force_value,
+            'money' => $user->money,
+            'max_invi' => $this->_config['Invi_Num_Toplimit']->value,
+            'login_reward_force' => $this->_config['Login_Tmp_Reward_Force']->value,
+        ];
+        return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
     }
 
     /**
      * @param User $user
      * @return bool
-     * 登陆获取临时握力
+     * 签到获取临时握力
      */
-    private function LoginRewardForce(User $user)
+    public function SignRewardForce()
     {
+        $user = Auth::user();
         $model = TempReward::where(['type' => 1, 'user_id' => $user->id])->orderBy('id', 'desc')->first();
         if (empty($model) || (date('Y-m-d', $model->start_time) != date('Y-m-d'))) {
             $temp_reward_model = new TempReward();
@@ -129,9 +150,16 @@ class UserController extends Controller
             $temp_reward_model->invalid_time = time() + $this->_config['Tmp_Force_Invalid']->value;
             $temp_reward_model->force = $this->_config['Invi_Tmp_Reward_Force']->value;
             $temp_reward_model->save();
-            return true;
+            ForceHistory::create([
+                'user_id' => $user->id,
+                'force_value' => $temp_reward_model->force,
+                'type' => 1,
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            return response()->json(['StatusCode' => 10000, 'message' => error_code(10000)]);
         }
-        return false;
+        return abort(40000, error_code(40000));
     }
 
     /**
@@ -151,6 +179,7 @@ class UserController extends Controller
             $force = $this->_config['Innumber_Reward_Force']->value;
             $f_user->force += $force;
         } else {
+            $force = $this->_config['Invi_Tmp_Reward_Force']->value;
             $temp_reward_model = new TempReward();
             $temp_reward_model->timestamps = true;
             $temp_reward_model->type = 2;
@@ -158,10 +187,18 @@ class UserController extends Controller
             $temp_reward_model->from_id = $user->id;
             $temp_reward_model->start_time = time();
             $temp_reward_model->invalid_time = time() + $this->_config['Tmp_Force_Invalid']->value;
-            $temp_reward_model->force = $this->_config['Invi_Tmp_Reward_Force']->value;
+            $temp_reward_model->force = $force;
             $temp_reward_model->save();
         }
         $f_user->save();
+        ForceHistory::create([
+            'user_id' => $f_user->id,
+            'force_value' => $force,
+            'type' => 2,
+            'from_id' => $user->id,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
         //添加到队列  通知邀请用户
         return response()->json(['StatusCode' => 10000, 'message' => error_code(10000)]);
     }

@@ -9,6 +9,7 @@
 namespace App\Http\Controllers;
 
 
+use App\Models\RewardHistory;
 use App\Models\RewardUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -37,12 +38,18 @@ class WithMoneyController extends Controller
         $id = $request->input('id');
         $reward_model = RewardUser::find($id);
         $this->_user->money += $reward_model->money;//添加撒币
-        $reward_model->delete();//清除奖励池
         if (RewardUser::where('user_id', $this->_user->id)->count() < $max_number) {
         } else {
             $this->_user->withmoney_status = 0;
         }
         if ($this->_user->save()) {
+            RewardHistory::create([
+                'user_id' => $this->_user->id,
+                'money' => $reward_model->money,
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            $reward_model->delete();//清除奖励池
             return response()->json(['StatusCode' => 10000, 'message' => error_code(10000)]);
         } else {
             return response()->json(['StatusCode' => 50000, 'message' => error_code(50000)]);
@@ -62,6 +69,12 @@ class WithMoneyController extends Controller
             $this->_user->withmoney_status = 0;
             $this->_user->save();
         }
+        return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
+    }
+
+    public function MoneyHistory()
+    {
+        $data = RewardHistory::where('user_id', $this->_user->id)->get()->toArray();
         return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
     }
 
