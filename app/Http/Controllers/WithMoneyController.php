@@ -55,7 +55,7 @@ class WithMoneyController extends Controller
      */
     public function ListWithMoney(Request $request)
     {
-        $max_number = $this->_config['Max_Position'];
+        $max_number = $this->_config['Max_Position']->value;
         $data = RewardUser::where('user_id', $this->_user->id)->get()->toArray();
         $count = count($data);
         if ($count >= $max_number) {
