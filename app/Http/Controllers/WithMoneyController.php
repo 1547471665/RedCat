@@ -13,7 +13,6 @@ use App\Models\RewardUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Crypt;
 
 class WithMoneyController extends Controller
 {
@@ -25,7 +24,6 @@ class WithMoneyController extends Controller
         $this->_user = Auth::user();
         $this->_config = Cache::get('setting');
     }
-
 
 
     /**
@@ -45,12 +43,10 @@ class WithMoneyController extends Controller
             $this->_user->withmoney_status = 0;
         }
         if ($this->_user->save()) {
-            $data = 'success';
-
+            return response()->json(['StatusCode' => 10000, 'message' => error_code(10000)]);
         } else {
-            $data = 'failed';
+            return response()->json(['StatusCode' => 50000, 'message' => error_code(50000)]);
         }
-        return response()->json($data);
     }
 
     /**
@@ -59,14 +55,14 @@ class WithMoneyController extends Controller
      */
     public function ListWithMoney(Request $request)
     {
-        $max_number = 10;
+        $max_number = $this->_config['Max_Position'];
         $data = RewardUser::where('user_id', $this->_user->id)->get()->toArray();
         $count = count($data);
-        if ($count == $max_number) {
+        if ($count >= $max_number) {
             $this->_user->withmoney_status = 0;
             $this->_user->save();
         }
-        return response()->json($data);
+        return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
     }
 
 }

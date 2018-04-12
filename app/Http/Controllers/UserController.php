@@ -34,11 +34,11 @@ class UserController extends Controller
     public function CreateInvitationFriendsUrl(Request $request)
     {
         if (empty($this->_user)) {
-            abort(4000, 'Unauthorized user');
+            abort(40102, error_code(40102));
         } else {
             $url = \url('user/register', ['id' => Crypt::encrypt($this->_user->id)], false);
         }
-        return response()->json(['inv_url' => $url]);
+        return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['inv_url' => $url]]);
     }
 
 
@@ -56,12 +56,12 @@ class UserController extends Controller
                 $user->login_time = date('Y-m-d');
                 $user->save();
                 self::LoginRewardForce($user);
-                return $user->api_token;
+                return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['api_token' => $user->api_token]]);
             } else {
-                return abort(4005, '用户名和密码不正确');
+                return abort(40100, error_code(40100));
             }
         } else {
-            return abort(4006, '登录信息不完整,请输入用户名和密码');
+            return abort(40100, error_code(40100));
         }
     }
 
@@ -94,12 +94,12 @@ class UserController extends Controller
                 if (!empty($fid)) {//设置邀请用户奖励
                     self::AcceptInvitation($user, $fid);
                 }
-                return response()->json(['message' => 'register success']);
+                return response()->json(['StatusCode' => 10000, 'message' => error_code(10000)]);
             } else {
-                return abort(4004, 'register failed');
+                return abort(50000, error_code(50000));
             }
         } else {
-            return abort(4005, 'Please enter the complete information');
+            return abort(40000, error_code(40000));
         }
     }
 
@@ -144,7 +144,7 @@ class UserController extends Controller
     {
         $f_user = User::find($fid);
         if ($fid == $user->id) {
-            abort('4001', "Not inviting yourself");//不能邀请自己
+            abort(40000, error_code(40000));//不能邀请自己
         }
         $number = User::where('invitation_id', $fid)->count();
         if ($number < $this->_config['Invi_Num_Toplimit']->value) {
@@ -163,6 +163,6 @@ class UserController extends Controller
         }
         $f_user->save();
         //添加到队列  通知邀请用户
-        return response()->json(['message' => 'success']);
+        return response()->json(['StatusCode' => 10000, 'message' => error_code(10000)]);
     }
 }
