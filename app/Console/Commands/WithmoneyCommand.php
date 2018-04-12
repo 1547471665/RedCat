@@ -11,10 +11,12 @@ namespace App\Console\Commands;
 
 use App\Models\RewardUser;
 use App\Models\Setting;
+use App\Models\TempReward;
+use App\Models\WithMoneyPlan;
 use App\Models\WithMoneyPlanUser;
 use App\User;
-use App\WithMoneyPlan;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 
 class WithmoneyCommand extends Command
 {
@@ -23,42 +25,36 @@ class WithmoneyCommand extends Command
 
     protected $description = 'With Money';
 
+    private $_config;
+
     public function __construct()
     {
+        $this->_config = Cache::get('setting');
         parent::__construct();
     }
 
     public function handle()
     {
-//        self::SetConfig('set_time_dispense_limit', 15 * 60, '发币失效时间间隔');
-//        die();
-        $model_setting = Setting::whereIn('key', [
-            'set_time_money_number',
-            'set_time_invalid_limit',
-            'set_number',
-            'set_time_dispense_limit'
-        ])->get(['key', 'value']);
-        $config = IndexBy($model_setting, 'key');
-        self::ClearExpireWithPlan();//清楚过期撒币计划
-        if ($model = WithMoneyPlan::orderBy('id', 'desc')->first()) {
-//            self::CarveUp($config, $model);//分币
-            self::CarveUp2($config, $model);//分币
-            self::AddPlan($config, $model->id);
+        self::ClearExpireWithPlan();//清除过期撒币计划
+        if ($model = WithMoneyPlan::orderBy('id', 'desc')->first()) {//获取最后一条撒币记录
+//            self::CarveUp($this->_config, $model);//分币
+            self::CarveUp2($this->_config, $model);//分币
+            self::AddPlan($this->_config, $model->id);
         } else {
-            self::AddPlan($config, 0);
+            self::AddPlan($this->_config, 0);
         }
 //        php D:\phpStudy\PHPTutorial\WWW\lumen\artisan test_command
     }
 
     private function CarveUp2($config, WithMoneyPlan $model)
     {
-        if (RewardUser::where('withmoneyplan_id', $model->id)->count() === 0 && ($model->dispense_invalid_time > time())) {
+        if (RewardUser::where('withmoneyplan_id', $model->id)->count() === 0 && ($model->dispense_invalid_time > time())) {//判断是否已经分配过了，或者已经过期
             $max_number = $config['set_number']->value;
             $all_force = 0;
             $except_user = [];
             $list_user = [];
             $datas = [];
-            $user_model = User::where(['login_time' => date('Y-m-d')])->get();
+            $user_model = User::where(['login_time' => date('Y-m-d')])->get();//获取登陆时间为当天的用户
             foreach ($user_model as $user) {
                 if ($user->rewarduser) {
                     $num = $user->rewarduser->count();
@@ -73,10 +69,14 @@ class WithmoneyCommand extends Command
                     $list_user[$user->id] = ['user_id' => $user->id, 'num' => 0];
                 }
             }
-            $every_point_number = $model->number / $all_force;
+            //获取有效用户 并且 临时握力还未失效的握力 根据用户ID分组
+            $temp_reward = TempReward::selectRaw('user_id,SUM(`force`) AS `force`')->where('invalid_time', '>', time())->whereIn('user_id', array_keys($list_user))->groupBy('user_id')->get();
+            $temp_forces = IndexBy($temp_reward, 'user_id');
+            $all_tmp_forces = array_sum(array_column($temp_forces, 'force'));
+            $every_point_number = $model->number / ($all_force + $all_tmp_forces);
             foreach ($user_model as $user) {
                 if (array_key_exists($user->id, $list_user)) {
-                    $get_money_value = $user->force * $every_point_number;
+                    $get_money_value = isset($temp_forces[$user->id]) ? (($user->force + $temp_forces[$user->id]->force) * $every_point_number) : ($user->force * $every_point_number);
 //                $datas[$item->user_id] = round($get_money_value, 3);
                     $item = [
                         'withmoneyplan_id' => $model->id,
@@ -119,10 +119,13 @@ class WithmoneyCommand extends Command
                     $list_user[$item->user_id] = ['user_id' => $item->user_id, 'num' => 0];
                 }
             }
-            $every_point_number = $model->number / $all_force;
+            $temp_reward = TempReward::selectRaw('user_id,SUM(`force`) AS `force`')->where('invalid_time', '>', time())->whereIn('user_id', array_keys($list_user))->groupBy('user_id')->get();
+            $temp_forces = IndexBy($temp_reward, 'user_id');
+            $all_tmp_forces = array_sum(array_column($temp_forces, 'force'));
+            $every_point_number = $model->number / ($all_force + $all_tmp_forces);
             foreach ($relation_model as $item) {
                 if (array_key_exists($item->user_id, $list_user)) {
-                    $get_money_value = $item->user->force * $every_point_number;
+                    $get_money_value = isset($temp_forces[$user->id]) ? (($item->user->force + $temp_forces[$item->user->id]->force) * $every_point_number) : ($item->user->force * $every_point_number);
 //                $datas[$item->user_id] = round($get_money_value, 3);
                     $item = [
                         'withmoneyplan_id' => $model->id,

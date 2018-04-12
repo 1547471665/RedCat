@@ -11,8 +11,11 @@ namespace App\Http\Controllers;
 
 use App\Jobs\WithmoneyJob;
 use App\Listeners\ExampleListener;
+use App\Models\TempReward;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 
 class WangController extends Controller
 {
@@ -22,6 +25,24 @@ class WangController extends Controller
             'App\Listeners\ExampleListener',
         ],
     ];
+
+    public function Index()
+    {
+        $params = ['make' => '长城', 'model' => '宏光', 'year' => 2018];
+        $date = Carbon::now()->addMinutes(1);
+//        $date = Carbon::now()->addMinutes(15);
+        Queue::later($date, new WithmoneyJob($params));
+//        $this->dispatch(new WithmoneyJob($params));
+        die();
+        $list_user = [215 => 'aaa', 210 => 'bbb'];
+        $temp_reward = TempReward::selectRaw('user_id,SUM(`force`) AS `force`')->where('invalid_time', '>', time())->whereIn('user_id', array_keys($list_user))->groupBy('user_id')->get();
+        $list = IndexBy($temp_reward, 'user_id');
+        var_dump(array_column($list, 'force'));
+        die();
+        echo '<pre>';
+        print_r(array_sum(array_column($list, 'force')));
+        die();
+    }
 
     public function Encrypt()
     {

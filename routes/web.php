@@ -11,17 +11,13 @@
 |
 */
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-
 $router->get('/', function () use ($router) {
-    return $router->app->version();
+    return "Welcome to visit RedCat ";
 });
-
-$router->get('/encrypt', 'WangController@encrypt');
 
 $router->post('user/login', 'UserController@login');
 $router->post('user/register', 'UserController@register');
+$router->post('user/register/{fid}', 'UserController@register');
 $router->get('user/info', [
     'middleware' => 'authToken',
     'uses' => 'UserController@info'
@@ -30,23 +26,8 @@ $router->get('user/info', [
 $router->group(['middleware' => 'authToken', 'prefix' => 'api/v1'], function ($router) {
     $router->get('sblist', 'WithMoneyController@ListWithMoney');
     $router->post('click', 'WithMoneyController@ClickWithMoney');
-//    $router->put('car/{id}', 'WithMoneyController@updateCar');
-//    $router->delete('car/{id}', 'WithMoneyController@deleteCar');
+    $router->get('createinvitation', 'WithMoneyController@CreateInvitationFriendsUrl');
 });
 
-$router->group(['prefix' => '1'], function ($router) {
-    $router->get('aaa', 'WangController@aaa');
-    $router->get('bbb', function (Request $request) {
-        $this->validate($request, [
-            'name' => 'required',
-            'email' => 'required|email|unique:users'//验证email 必填，格式为email 并且是用户表中唯一的
-        ]);
-    });
-});
+$router->get('1', "WangController@Index");
 
-/*$router->group(['prefix' => 'api/v1'], function ($router) {
-    $router->post('car', 'CarController@createCar');
-    $router->put('car/{id}', 'CarController@updateCar');
-    $router->delete('car/{id}', 'CarController@deleteCar');
-    $router->get('car', 'CarController@index');
-});*/

@@ -9,11 +9,10 @@
 namespace App\Console\Commands;
 
 
+use App\Models\WithMoneyPlan;
 use App\Models\WithMoneyPlanUser;
 use App\User;
-use App\WithMoneyPlan;
 use Illuminate\Console\Command;
-use phpDocumentor\Reflection\Types\Integer;
 
 class TestCommand extends Command
 {

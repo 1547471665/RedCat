@@ -2,8 +2,10 @@
 
 namespace App\Console;
 
+use App\Console\Commands\SettingCommand;
 use App\Console\Commands\TestCommand;
 use App\Console\Commands\WithmoneyCommand;
+use App\Models\Car;
 use Illuminate\Console\Scheduling\Schedule;
 use Laravel\Lumen\Console\Kernel as ConsoleKernel;
 
@@ -17,6 +19,7 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         TestCommand::class,
         WithmoneyCommand::class,
+        SettingCommand::class,
         //
     ];
 
@@ -29,6 +32,10 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         //
+        $params = ['make' => 'xixixi', 'model' => '222', 'year' => 2018];
+        $schedule->call(function () use ($params) {
+            Car::create($params);
+        })->everyMinute();
 
     }
 }

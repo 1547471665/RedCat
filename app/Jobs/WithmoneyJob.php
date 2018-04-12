@@ -2,19 +2,22 @@
 
 namespace App\Jobs;
 
+use App\Models\Car;
+
 class WithmoneyJob extends Job
 {
-    public $str;
+
+    public $params;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($str)
+    public function __construct($params)
     {
         //
-        $this->str = $str;
+        $this->params = $params;
     }
 
     /**
@@ -25,6 +28,6 @@ class WithmoneyJob extends Job
     public function handle()
     {
         //
-        echo 'hellow ' . $this->str;
+        Car::create($this->params);
     }
 }
