@@ -12,7 +12,8 @@
         "pda/pheanstalk": "~3.0",
         "aws/aws-sdk-php": "~3.0",
         "iron-io/iron_mq": "~1.5",
-        "guzzlehttp/guzzle": "^6.3"
+        "guzzlehttp/guzzle": "~6.0",
+        "yansongda/pay": "^2.1"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",

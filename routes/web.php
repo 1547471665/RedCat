@@ -29,5 +29,8 @@ $router->group(['middleware' => 'authToken', 'prefix' => 'api/v1'], function ($r
     $router->get('mall', 'MallController@List');//商城列表
 });
 
+$router->get('wx', "WeiXinController@Index");
 $router->get('1', "WangController@Index");
+$router->get('2', "WxxcxController@Index");
+$router->get('3', "WangController@Aaa");
 

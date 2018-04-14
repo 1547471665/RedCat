@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "d7752021dba32d77a8cc54de2523ee7b",
+    "content-hash": "09cbab3f85cafa4fd4e7e6bff47316c5",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -718,16 +718,16 @@
         },
         {
             "name": "illuminate/contracts",
-            "version": "v5.6.15",
+            "version": "v5.6.16",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/contracts.git",
-                "reference": "965b814964cc4649cd7e933bba2ae3eeb11f2927"
+                "reference": "322ec80498b3bf85bc4025d028e130a9b50242b9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://files.phpcomposer.com/files/illuminate/contracts/965b814964cc4649cd7e933bba2ae3eeb11f2927.zip",
-                "reference": "965b814964cc4649cd7e933bba2ae3eeb11f2927",
+                "url": "https://files.phpcomposer.com/files/illuminate/contracts/322ec80498b3bf85bc4025d028e130a9b50242b9.zip",
+                "reference": "322ec80498b3bf85bc4025d028e130a9b50242b9",
                 "shasum": ""
             },
             "require": {
@@ -758,7 +758,7 @@
             ],
             "description": "The Illuminate Contracts package.",
             "homepage": "https://laravel.com",
-            "time": "2018-03-25T12:54:46+00:00"
+            "time": "2018-04-07T17:05:26+00:00"
         },
         {
             "name": "illuminate/database",
@@ -1293,16 +1293,16 @@
         },
         {
             "name": "illuminate/support",
-            "version": "v5.6.15",
+            "version": "v5.6.16",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/support.git",
-                "reference": "79d074f5a49fa972b3c0ccf4468be2ad92eb3e3d"
+                "reference": "fad0669f858423679497a17f973261cc32f9a5a8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://files.phpcomposer.com/files/illuminate/support/79d074f5a49fa972b3c0ccf4468be2ad92eb3e3d.zip",
-                "reference": "79d074f5a49fa972b3c0ccf4468be2ad92eb3e3d",
+                "url": "https://files.phpcomposer.com/files/illuminate/support/fad0669f858423679497a17f973261cc32f9a5a8.zip",
+                "reference": "fad0669f858423679497a17f973261cc32f9a5a8",
                 "shasum": ""
             },
             "require": {
@@ -1346,7 +1346,7 @@
             ],
             "description": "The Illuminate Support package.",
             "homepage": "https://laravel.com",
-            "time": "2018-03-29T15:55:16+00:00"
+            "time": "2018-04-05T21:19:22+00:00"
         },
         {
             "name": "illuminate/translation",
@@ -2679,7 +2679,7 @@
         },
         {
             "name": "symfony/translation",
-            "version": "v4.0.7",
+            "version": "v4.0.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/translation.git",
@@ -2794,6 +2794,101 @@
                 "environment"
             ],
             "time": "2016-09-01T10:05:43+00:00"
+        },
+        {
+            "name": "yansongda/pay",
+            "version": "v2.1.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/yansongda/pay.git",
+                "reference": "89bf5eddef48e016c0237f127602a56481c6fc30"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://files.phpcomposer.com/files/yansongda/pay/89bf5eddef48e016c0237f127602a56481c6fc30.zip",
+                "reference": "89bf5eddef48e016c0237f127602a56481c6fc30",
+                "shasum": ""
+            },
+            "require": {
+                "ext-openssl": "*",
+                "ext-simplexml": "*",
+                "monolog/monolog": "^1.23",
+                "php": ">=7.0",
+                "symfony/http-foundation": "^3.0|^4.0",
+                "yansongda/supports": "^1.4"
+            },
+            "require-dev": {
+                "mockery/mockery": "1.0.x-dev",
+                "phpunit/phpunit": "^6.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Yansongda\\Pay\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "yansongda",
+                    "email": "me@yansongda.cn"
+                }
+            ],
+            "description": "专注 Alipay 和 WeChat 的支付扩展包",
+            "keywords": [
+                "alipay",
+                "pay",
+                "wechat"
+            ],
+            "time": "2018-04-09T03:39:47+00:00"
+        },
+        {
+            "name": "yansongda/supports",
+            "version": "v1.4.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/yansongda/supports.git",
+                "reference": "7d1c1707048a465eaa17b3f9f94ab4f6fb529313"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://files.phpcomposer.com/files/yansongda/supports/7d1c1707048a465eaa17b3f9f94ab4f6fb529313.zip",
+                "reference": "7d1c1707048a465eaa17b3f9f94ab4f6fb529313",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "^6.3",
+                "php": ">=5.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Yansongda\\Supports\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "yansongda",
+                    "email": "me@yansongda.cn"
+                }
+            ],
+            "description": "common components",
+            "keywords": [
+                "Guzzle",
+                "array",
+                "collection",
+                "config",
+                "http",
+                "support"
+            ],
+            "time": "2018-03-22T12:33:46+00:00"
         }
     ],
     "packages-dev": [
