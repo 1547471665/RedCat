@@ -162,44 +162,5 @@ class UserController extends Controller
         return abort(40000, error_code(40000));
     }
 
-    /**
-     * @param Request $request
-     * @param $fid
-     * @return \Illuminate\Http\JsonResponse
-     * 接受好友邀请
-     */
-    private function AcceptInvitation(User $user, $fid)
-    {
-        $f_user = User::find($fid);
-        if ($fid == $user->id) {
-            abort(40000, error_code(40000));//不能邀请自己
-        }
-        $number = User::where('invitation_id', $fid)->count();
-        if ($number < $this->_config['Invi_Num_Toplimit']->value) {
-            $force = $this->_config['Innumber_Reward_Force']->value;
-            $f_user->force += $force;
-        } else {
-            $force = $this->_config['Invi_Tmp_Reward_Force']->value;
-            $temp_reward_model = new TempReward();
-            $temp_reward_model->timestamps = true;
-            $temp_reward_model->type = 2;
-            $temp_reward_model->user_id = $fid;
-            $temp_reward_model->from_id = $user->id;
-            $temp_reward_model->start_time = time();
-            $temp_reward_model->invalid_time = time() + $this->_config['Tmp_Force_Invalid']->value;
-            $temp_reward_model->force = $force;
-            $temp_reward_model->save();
-        }
-        $f_user->save();
-        ForceHistory::create([
-            'user_id' => $f_user->id,
-            'force_value' => $force,
-            'type' => 2,
-            'from_id' => $user->id,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
-        //添加到队列  通知邀请用户
-        return response()->json(['StatusCode' => 10000, 'message' => error_code(10000)]);
-    }
+   
 }

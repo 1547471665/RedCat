@@ -9,54 +9,86 @@
 namespace App\Http\Controllers;
 
 
+use App\Models\ForceHistory;
+use App\Models\TempReward;
+use App\Models\User;
 use App\weixin\WXBizDataCrypt;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 
 class WeiXinController extends Controller
 {
     private $appid;
     private $secret;
     private $access_token;
+    private $salt;
+    private $_config;
+
 
     public function __construct()
     {
+        $this->salt = "userloginregister";
+        $this->_config = \Illuminate\Support\Facades\Cache::get('setting');
         $this->appid = config('wechat.WECHAT_APPID');
         $this->secret = config('wechat.WECHAT_SECRET');
         self::Token();
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse|void
+     * 微信登陆/注册接口
+     */
     public function Login(Request $request)
     {
-        return self::getUserInfo($request);
-        /* $post_data = [
-             'code' => '0011SueN09FPV42UwBeN0KPyeN01Suev',
-             'userData' => '{
-     "errMsg": "getUserInfo:ok",
-     "rawData": "{\"nickName\":\"少华\",\"gender\":1,\"language\":\"zh_CN\",\"city\":\"Chaoyang\",\"province\":\"Beijing\",\"country\":\"China\",\"avatarUrl\":\"https://wx.qlogo.cn/mmopen/vi_32/Q0j4TwGTfTJPem18uLA8O4QabViaT4SwdQhOVjdEoHeNd3mic7L8IqHA1xSSVLzfnbrhGR1vISdWLic7h8dwibFr7g/0\"}",
-     "userInfo": {
-         "nickName": "少华",
-         "gender": 1,
-         "language": "zh_CN",
-         "city": "Chaoyang",
-         "province": "Beijing",
-         "country": "China",
-         "avatarUrl": "https://wx.qlogo.cn/mmopen/vi_32/Q0j4TwGTfTJPem18uLA8O4QabViaT4SwdQhOVjdEoHeNd3mic7L8IqHA1xSSVLzfnbrhGR1vISdWLic7h8dwibFr7g/0"
-     },
-     "signature": "6e2291eb25e734ebd74a2d67320edcc06dad0ca3",
-     "encryptedData": "mbzxJO4aZ/YFngt/R0ReZL37BkTMIXYqZAjWI05NQMVMgW4+1J0wM5U4A9VOCxdJztUxzxTAnQb8cqUiq9GsB/ex63K9TVImAHugOl3OUAyBqrXUiPnWNzjRX/jMMnNbUcdzTx9Ozo502G3RNR1Rp3PX9pMXdOYqqjOMe3GgmxsAiauD1/ZDwHR8sUO1u/o8+uPNGI5OBWHlW1VHjpJPHreGK/DcCvhc4zhHX2V6Xx/jBE+5juItimQDfKCP98mDrx7mpfxqUqBBPS4D8J7VvXGGyQpZjNXvh0kK6OSUnhzWMZww5ZGusBFDSkr80KJXuWr24eF/l1tto1xHHBg9yQBNGOYpwhHCiKmgIIrsjfBv4ppvG6HrjRq90oqIjhRKoo0ybMsim/PQxTdc03FwEupSHImu29hchgmJf2Ew/mRh5fdp87skAW22PJVEZYVWlhJoASu2/kHMe9Mihp2Fn+yjtBhW+GlchZxDGEl0+qU=",
-     "iv": "YKaR3DU2dEBQ9JRCsZUHAg=="
- }',
-         ];
-         $client = new Client();
-         $response = $client->post('http://shayao.lumen.net/wx/login', ['form_params' => $post_data,]);
-         $code = $response->getStatusCode();
-         $body = $response->getBody();
-         $contents = $body->getContents();*/
+        $user_info = self::getUserInfo($request);
+        $user = User::where('openId', $user_info->openId)->first();
+        if ($user) {//用户存在
+            $token = str_random(60);
+//                $user->api_token = $token;
+            $user->login_time = date('Y-m-d');
+            $user->save();
+            return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['user_info' => $user]]);
+        } else {//用户不存在。注册
+            $password = "123456";
+            $user = new User;
+            $user->username = $user_info->openId;
+            $user->password = sha1($this->salt . $password);
+            $user->email = 'example@example.com';
+            $user->api_token = str_random(60);
+            $user->login_time = date('Y-m-d');
+            $user->login_status = 1;
+            $user->openId = $user_info->openId;
+            $user->nickName = $user_info->nickName;
+            $user->gender = $user_info->gender;
+            $user->language = $user_info->language;
+            $user->city = $user_info->city;
+            $user->province = $user_info->province;
+            $user->country = $user_info->country;
+            $user->avatarUrl = $user_info->avatarUrl;
+            if (!empty($fid)) {
+                $fid = Crypt::decrypt(urldecode($fid));
+                $user->invitation_id = $fid;
+            }
+            if ($user->save()) {
+                if (!empty($fid)) {//设置邀请用户奖励
+                    self::AcceptInvitation($user, $fid);
+                }
+                return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $user]);
+            } else {
+                return abort(50000, error_code(50000));
+            }
+        }
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * 获取用户信息
+     */
     public function getUserInfo(Request $request)
     {
         $Open_data = self::Openid($request);
@@ -86,7 +118,6 @@ class WeiXinController extends Controller
      */
     private function Openid(Request $request)
     {
-//        return json_decode('{"session_key":"thejrwbyEs7Ci1Evgh+HUA==","openid":"oXP4D5k--e9LJmacLAMCKu00_Ais"}');
         $code = $request->input('code');
         $uri = "https://api.weixin.qq.com/sns/jscode2session?appid=" . $this->appid . "&secret=" . $this->secret . "&js_code=" . $code . "&grant_type=authorization_code";
 //        return $body_result = json_decode(file_get_contents($uri));
@@ -98,9 +129,53 @@ class WeiXinController extends Controller
         return $body_result;
     }
 
+    /**
+     * @return string
+     */
     public function Index()
     {
         return ($this->checkSignature()) ? $_GET['echostr'] : 'xx';
+    }
+
+    /**
+     * @param Request $request
+     * @param $fid
+     * @return \Illuminate\Http\JsonResponse
+     * 接受好友邀请
+     */
+    private function AcceptInvitation(User $user, $fid)
+    {
+        $f_user = User::find($fid);
+        if ($fid == $user->id) {
+            abort(40000, error_code(40000));//不能邀请自己
+        }
+        $number = User::where('invitation_id', $fid)->count();
+        if ($number < $this->_config['Invi_Num_Toplimit']->value) {
+            $force = $this->_config['Innumber_Reward_Force']->value;
+            $f_user->force += $force;
+        } else {
+            $force = $this->_config['Invi_Tmp_Reward_Force']->value;
+            $temp_reward_model = new TempReward();
+            $temp_reward_model->timestamps = true;
+            $temp_reward_model->type = 2;
+            $temp_reward_model->user_id = $fid;
+            $temp_reward_model->from_id = $user->id;
+            $temp_reward_model->start_time = time();
+            $temp_reward_model->invalid_time = time() + $this->_config['Tmp_Force_Invalid']->value;
+            $temp_reward_model->force = $force;
+            $temp_reward_model->save();
+        }
+        $f_user->save();
+        ForceHistory::create([
+            'user_id' => $f_user->id,
+            'force_value' => $force,
+            'type' => 2,
+            'from_id' => $user->id,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        //添加到队列  通知邀请用户
+        return response()->json(['StatusCode' => 10000, 'message' => error_code(10000)]);
     }
 
     /**
