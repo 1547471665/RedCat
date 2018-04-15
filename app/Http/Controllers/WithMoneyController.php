@@ -9,6 +9,7 @@
 namespace App\Http\Controllers;
 
 
+use App\Models\Car;
 use App\Models\RewardHistory;
 use App\Models\RewardUser;
 use Illuminate\Http\Request;
@@ -65,7 +66,7 @@ class WithMoneyController extends Controller
      * 获取撒币列表
      */
     public function ListWithMoney(Request $request)
-    {
+    {//@TODO 固定下标
         $max_number = $this->_config['Max_Position']->value;
         $data = RewardUser::where('user_id', $this->_user->id)->get()->toArray();
         $count = count($data);
@@ -73,12 +74,20 @@ class WithMoneyController extends Controller
             $this->_user->withmoney_status = 0;
             $this->_user->save();
         }
-        return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
+        return response()->json([
+            'StatusCode' => 10000,
+            'message' => error_code(10000),
+            'data' => $data,
+            'force' => $this->_user->force,
+            'money' => $this->_user->money
+        ]);
     }
 
-    public function MoneyHistory()
+    public function MoneyHistory(Request $request)
     {
-        $model = RewardHistory::where('user_id', $this->_user->id)->orderBy('id', 'desc')->get()->toArray();
+        $type_name = ["铲币", "签到", "邀请好友"];
+        $pageSize = $request->input('pageSize', 10);
+        $model = RewardHistory::where('user_id', $this->_user->id)->orderBy('id', 'desc')->paginate($pageSize)->toArray();
         $data = ['list' => $model, 'money' => $this->_user->money];
         return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
     }

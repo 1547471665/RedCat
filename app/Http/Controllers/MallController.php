@@ -9,6 +9,9 @@
 namespace App\Http\Controllers;
 
 
+use App\Models\Mall;
+use Illuminate\Support\Facades\Request;
+
 class MallController extends Controller
 {
 
@@ -24,9 +27,10 @@ class MallController extends Controller
         return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
     }
 
-    public function List()
+    public function List(Request $request)
     {
-        $data = [];
+        $pageSize = $request->input('pageSize', 10);
+        $data = Mall::where('status', 1)->orderBy('id', 'desc')->paginate($pageSize)->toArray();
         return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
     }
 
