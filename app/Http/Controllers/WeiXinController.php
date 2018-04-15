@@ -44,7 +44,7 @@ class WeiXinController extends Controller
      */
     public function Login(Request $request)
     {
-        $user_info = self::getUserInfo($request);
+        $user_info = json_decode(self::getUserInfo($request));
         $user = User::where('openId', $user_info->openId)->first();
         if ($user) {//用户存在
             $token = str_random(60);
@@ -77,7 +77,7 @@ class WeiXinController extends Controller
                 if (!empty($fid)) {//设置邀请用户奖励
                     self::AcceptInvitation($user, $fid);
                 }
-                return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $user]);
+                return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['user_info' => $user]]);
             } else {
                 return abort(50000, error_code(50000));
             }
@@ -103,9 +103,9 @@ class WeiXinController extends Controller
         $pc = new WXBizDataCrypt($this->appid, $sessionKey);
         $errCode = $pc->decryptData($encryptedData, $iv, $data);
         if ($errCode == 0) {
-            return response()->json($data);
+            return $data;
         } else {
-            return response()->json($errCode);
+            return $errCode;
         }
     }
 
