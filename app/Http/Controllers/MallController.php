@@ -10,7 +10,7 @@ namespace App\Http\Controllers;
 
 
 use App\Models\Mall;
-use Illuminate\Support\Facades\Request;
+use Illuminate\Http\Request;
 
 class MallController extends Controller
 {
