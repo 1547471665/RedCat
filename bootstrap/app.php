@@ -28,6 +28,8 @@ $app->withFacades();
 
 $app->withEloquent();
 
+$app->configure('wechat');
+
 /*
 |--------------------------------------------------------------------------
 | Register Container Bindings
