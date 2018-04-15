@@ -113,21 +113,33 @@ class UserController extends Controller
     /**
      * @return \Illuminate\Contracts\Auth\Authenticatable|null
      * 获取用户信息
+     * 1.邀请数
+     * 2.总共邀请多少人
+     * 3.登陆临时握力
+     * 4.签到临时握力
+     * 5.总握力
+     * 6.临时总握力
+     * 7.猫币
      */
     public function info()
     {
         $user = Auth::user();
         $invitation_number = User::where('invitation_id', $user->id)->count();
         $force_value = ForceHistory::where('user_id', $user->id)->sum('force_value');
-        $temp_force_value = TempReward::where('user_id', $user->id)->where('type', 2)->sum('force');
+        $temp_force_value = TempReward::where('user_id', $user->id)->sum('force');
+        $login_temp_force_value = TempReward::where('user_id', $user->id)->where('type', 1)->sum('force');
+        $sign_temp_force_value = TempReward::where('user_id', $user->id)->where('type', 3)->sum('force');
+        unset($user->openId);
+        unset($user->username);
         $data = [
-            'user' => $user,
+//            'user' => $user,
             'invitation_num' => $invitation_number,
+            'max_invi' => $this->_config['Invi_Num_Toplimit']->value,
+            'login_reward_force' => $login_temp_force_value,
+            'temp_force' => $sign_temp_force_value,
             'force_value' => $force_value,
             'temp_force_value' => $temp_force_value,
             'money' => $user->money,
-            'max_invi' => $this->_config['Invi_Num_Toplimit']->value,
-            'login_reward_force' => $this->_config['Login_Tmp_Reward_Force']->value,
         ];
         return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
     }
@@ -140,11 +152,12 @@ class UserController extends Controller
     public function SignRewardForce()
     {
         $user = Auth::user();
-        $model = TempReward::where(['type' => 1, 'user_id' => $user->id])->orderBy('id', 'desc')->first();
-        if (empty($model) || (date('Y-m-d', $model->start_time) != date('Y-m-d'))) {
+        $model = TempReward::where(['type' => 3, 'user_id' => $user->id])->orderBy('id', 'desc')->first();
+//        if (empty($model) || (date('Y-m-d', $model->start_time) != date('Y-m-d'))) {
+        if (true) {
             $temp_reward_model = new TempReward();
             $temp_reward_model->timestamps = true;
-            $temp_reward_model->type = 1;
+            $temp_reward_model->type = 3;
             $temp_reward_model->user_id = $user->id;
             $temp_reward_model->start_time = time();
             $temp_reward_model->invalid_time = time() + $this->_config['Tmp_Force_Invalid']->value;
@@ -153,14 +166,14 @@ class UserController extends Controller
             ForceHistory::create([
                 'user_id' => $user->id,
                 'force_value' => $temp_reward_model->force,
-                'type' => 1,
+                'type' => 3,
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s'),
             ]);
-            return response()->json(['StatusCode' => 10000, 'message' => error_code(10000)]);
+            return response()->json(['StatusCode' => 10000, 'message' => error_code(10001), 'data' => ['temp_force' => $temp_reward_model->force]]);
         }
-        return abort(40000, error_code(40000));
+        return abort(40111, error_code(40111));
     }
 
-   
+
 }

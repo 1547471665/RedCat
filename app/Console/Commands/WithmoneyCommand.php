@@ -85,7 +85,7 @@ class WithmoneyCommand extends Command
                         'sort' => $list_user[$user->id]['num'] + 1,
                         'number' => $list_user[$user->id]['num'] + 1,
                         'created_at' => date('Y-m-d H:i:s'),
-                        'udpated_at' => date('Y-m-d H:i:s'),
+                        'updated_at' => date('Y-m-d H:i:s'),
                     ];
                     array_push($datas, $item);
                 }

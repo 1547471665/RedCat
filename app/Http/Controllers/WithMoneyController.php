@@ -37,6 +37,9 @@ class WithMoneyController extends Controller
         $max_number = 10;
         $id = $request->input('id');
         $reward_model = RewardUser::find($id);
+        if (is_null($reward_model) || ($reward_model->user_id != $this->_user->id)) {
+            return response()->json(['StatusCode' => 40000, 'message' => error_code(40000)]);
+        }
         $this->_user->money += $reward_model->money;//添加撒币
         if (RewardUser::where('user_id', $this->_user->id)->count() < $max_number) {
         } else {
@@ -48,6 +51,7 @@ class WithMoneyController extends Controller
                 'money' => $reward_model->money,
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s'),
+                '`type`' => 0,
             ]);
             $reward_model->delete();//清除奖励池
             return response()->json(['StatusCode' => 10000, 'message' => error_code(10000)]);
@@ -74,7 +78,8 @@ class WithMoneyController extends Controller
 
     public function MoneyHistory()
     {
-        $data = RewardHistory::where('user_id', $this->_user->id)->get()->toArray();
+        $model = RewardHistory::where('user_id', $this->_user->id)->orderBy('id', 'desc')->get()->toArray();
+        $data = ['list' => $model, 'money' => $this->_user->money];
         return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
     }
 

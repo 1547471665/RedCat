@@ -10,6 +10,7 @@ namespace App\Http\Controllers;
 
 
 use App\Models\ForceHistory;
+use App\Models\RewardHistory;
 use App\Models\TempReward;
 use App\Models\User;
 use App\weixin\WXBizDataCrypt;
@@ -44,13 +45,34 @@ class WeiXinController extends Controller
      */
     public function Login(Request $request)
     {
+        if ($request->has('api_token')) {
+            $user = User::where('api_token', $request->input('api_token'))->first();
+            if (self::continuation_days($user)) {
+                $user->continuation_days = $user->continuation_days + 1;
+            } else {
+                $user->continuation_days = 1;
+            }
+            $user->login_time = date('Y-m-d');
+            $user->save();
+            unset($user->username);
+            unset($user->openid);
+            return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['user_info' => $user]]);
+        }
         $user_info = json_decode(self::getUserInfo($request));
         $user = User::where('openId', $user_info->openId)->first();
         if ($user) {//用户存在
             $token = str_random(60);
 //                $user->api_token = $token;
+            if (self::continuation_days($user)) {
+                $user->continuation_days = $user->continuation_days + 1;
+            } else {
+                $user->continuation_days = 1;
+            }
             $user->login_time = date('Y-m-d');
             $user->save();
+            unset($user->username);
+            unset($user->openid);
+            self::TempRewardForce($user);//添加登陆临时握力
             return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['user_info' => $user]]);
         } else {//用户不存在。注册
             $password = "123456";
@@ -69,6 +91,7 @@ class WeiXinController extends Controller
             $user->province = $user_info->province;
             $user->country = $user_info->country;
             $user->avatarUrl = $user_info->avatarUrl;
+            $user->force = $this->_config['Reg_Reward_Force']->value;
             if (!empty($fid)) {
                 $fid = Crypt::decrypt(urldecode($fid));
                 $user->invitation_id = $fid;
@@ -77,6 +100,8 @@ class WeiXinController extends Controller
                 if (!empty($fid)) {//设置邀请用户奖励
                     self::AcceptInvitation($user, $fid);
                 }
+                unset($user->username);
+                unset($user->openid);
                 return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['user_info' => $user]]);
             } else {
                 return abort(50000, error_code(50000));
@@ -109,6 +134,16 @@ class WeiXinController extends Controller
         }
     }
 
+    private function continuation_days($user)
+    {
+        $Yesterday = date("Y-m-d", strtotime("-1 day"));
+        if ($user->login_time == $Yesterday) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 
     /**
      * @param Request $request
@@ -135,6 +170,31 @@ class WeiXinController extends Controller
     public function Index()
     {
         return ($this->checkSignature()) ? $_GET['echostr'] : 'xx';
+    }
+
+    private function TempRewardForce($user)
+    {
+        $model = TempReward::where(['type' => 1, 'user_id' => $user->id])->orderBy('id', 'desc')->first();
+        if (empty($model) || (date('Y-m-d', $model->start_time) != date('Y-m-d'))) {
+            $temp_reward_model = new TempReward();
+            $temp_reward_model->timestamps = true;
+            $temp_reward_model->type = 1;
+            $temp_reward_model->user_id = $user->id;
+            $temp_reward_model->start_time = time();
+            $temp_reward_model->invalid_time = time() + $this->_config['Tmp_Force_Invalid']->value;
+            $temp_reward_model->force = $this->_config['Login_Tmp_Reward_Force']->value;
+            $temp_reward_model->save();
+            ForceHistory::create([
+                'user_id' => $user->id,
+                'force_value' => $temp_reward_model->force,
+                'type' => 1,
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -165,6 +225,7 @@ class WeiXinController extends Controller
             $temp_reward_model->force = $force;
             $temp_reward_model->save();
         }
+        $f_user->money = $f_user->money + 1;
         $f_user->save();
         ForceHistory::create([
             'user_id' => $f_user->id,
@@ -173,6 +234,14 @@ class WeiXinController extends Controller
             'from_id' => $user->id,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        RewardHistory::create([
+            'user_id' => $f_user->id,
+            'money' => 1,
+            'created_at' => date('Y-m-d'),
+            'updated_at' => date('Y-m-d'),
+            'type' => 2,
+            'from_id' => $user->id,
         ]);
         //添加到队列  通知邀请用户
         return response()->json(['StatusCode' => 10000, 'message' => error_code(10000)]);
