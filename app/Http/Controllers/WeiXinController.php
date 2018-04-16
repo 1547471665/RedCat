@@ -40,6 +40,69 @@ class WeiXinController extends Controller
     }
 
     /**
+     * @param $user
+     * 文本内容....<a href="http://www.qq.com" data-miniprogram-appid="appid" data-miniprogram-path="pages/index/index">点击跳小程序</a>
+     */
+    public function SendMsgByCustomService(Request $request)
+    {
+        if ($request->has(['openid', 'msg'])) {
+            $openid = $request->input('openid');
+            $msg = $request->input('msg', 'Hello World');
+        } else {
+            return abort(40000, error_code(40000));
+        }
+        $uri = "https://api.weixin.qq.com/cgi-bin/message/custom/send?access_token=" . $this->access_token;
+        $client = new Client();
+        $res = $client->post($uri, [
+            'form_params' => [
+                'touser' => $openid,
+                'msgtype' => 'text',
+                'text' => [
+                    'content' => $msg,
+                ],
+            ]
+        ]);
+        $body = $res->getBody();
+        echo $body->getContents();
+        die();
+    }
+
+    /**
+     *  邀请ID  tGDHvTOQlX8oNKzI_yV0AsGnTxzIED2h0FRfCW1_9Ag
+     * 用户昵称{{keyword1.DATA}}  温馨提示 {{keyword2.DATA}}  备注{{keyword3.DATA}}
+     */
+    public function SendMsgTemplate($user, $template_id = "")
+    {
+        $template_id = "tGDHvTOQlX8oNKzI_yV0AsGnTxzIED2h0FRfCW1_9Ag";
+        $uri = "https://api.weixin.qq.com/cgi-bin/message/wxopen/template/send?access_token=" . $this->access_token;
+        $client = new Client();
+        $client->post($uri, [
+            'form_params' => [
+                'touser' => $user->openId,
+                'template_id' => $template_id,
+//                'page' => 'page',
+                'form_id' => 'FORMID',
+                'data' => [
+                    'keyword1' => [
+                        "value" => $user->nickName,
+                        "color" => "#004D40",
+                    ],
+                    'keyword2' => [
+                        "value" => "一首凉凉送给你",
+                        "color" => "#173177",
+                    ],
+                    'keyword3' => [
+                        "value" => "积分已经到账",
+                        "color" => "#173177",
+                    ],
+                ],
+                'color' => '#FF1744',
+                'emphasis_keyword' => 'keyword1.DATA',
+            ]
+        ]);
+    }
+
+    /**
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse|void
      * 微信登陆/注册接口

@@ -33,6 +33,7 @@ $router->group(['middleware' => 'authToken', 'prefix' => 'api/v1'], function ($r
     $router->get('mall', 'MallController@List');//商城列表
     $router->get('getshare', 'WeiXinController@AcceptInvitation');//接受邀请
     $router->post('getshare', 'WeiXinController@AcceptInvitation');//接受邀请
+    $router->get('sendmsg', 'WeiXinController@SendMsgByCustomService');//接受邀请
 });
 $router->group(['prefix' => 'wx'], function ($router) {
     $router->get('/', "WeiXinController@Index");//消息服务器配置验证 √
