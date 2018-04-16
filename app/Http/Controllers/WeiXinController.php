@@ -17,6 +17,7 @@ use App\weixin\WXBizDataCrypt;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 
@@ -92,14 +93,7 @@ class WeiXinController extends Controller
             $user->country = $user_info->country;
             $user->avatarUrl = $user_info->avatarUrl;
             $user->force = $this->_config['Reg_Reward_Force']->value;
-            if (!empty($fid)) {
-                $fid = Crypt::decrypt(urldecode($fid));
-                $user->invitation_id = $fid;
-            }
             if ($user->save()) {
-                if (!empty($fid)) {//设置邀请用户奖励
-                    self::AcceptInvitation($user, $fid);
-                }
                 unset($user->username);
                 unset($user->openid);
                 return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['user_info' => $user]]);
@@ -203,12 +197,28 @@ class WeiXinController extends Controller
      * @return \Illuminate\Http\JsonResponse
      * 接受好友邀请
      */
-    private function AcceptInvitation(User $user, $fid)
+    public function AcceptInvitation(Request $request)
     {
-        $f_user = User::find($fid);
-        if ($fid == $user->id) {
+        if ($request->has(['api_token', 'api_ticket'])) {
+            $user = Auth::user();
+            if ($user->invitation_id > 0) {
+                return abort(40000, error_code(40000));
+            }
+            $api_ticket = $request->input('api_ticket');
+//            $fid = Crypt::decrypt(urldecode($api_ticket));
+            $fid = $api_ticket;
+            $user->invitation_id = $fid;
+            $f_user = User::find($fid);
+            if (is_null($f_user)) {
+                return abort(40000, error_code(40000));
+            }
+        } else {
+            return abort(40000, error_code(40000));
+        }
+        if ($fid == $user->id || $fid > $user->id) {
             abort(40000, error_code(40000));//不能邀请自己
         }
+        $user->save();
         $number = User::where('invitation_id', $fid)->count();
         if ($number < $this->_config['Invi_Num_Toplimit']->value) {
             $force = $this->_config['Innumber_Reward_Force']->value;

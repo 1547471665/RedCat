@@ -15,6 +15,7 @@ use App\Models\RewardUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 
 class WithMoneyController extends Controller
 {
@@ -79,7 +80,9 @@ class WithMoneyController extends Controller
             'message' => error_code(10000),
             'data' => $data,
             'force' => $this->_user->force,
-            'money' => $this->_user->money
+            'money' => $this->_user->money,
+            'api_ticket' => $this->_user->id
+//            'api_ticket' => Crypt::encrypt($this->_user->id)
         ]);
     }
 

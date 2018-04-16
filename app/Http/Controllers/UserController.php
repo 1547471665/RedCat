@@ -140,6 +140,7 @@ class UserController extends Controller
             'force_value' => $force_value,
             'temp_force_value' => $temp_force_value,
             'money' => $user->money,
+            'api_ticket' => $user->id,
         ];
         return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
     }
@@ -153,8 +154,8 @@ class UserController extends Controller
     {
         $user = Auth::user();
         $model = TempReward::where(['type' => 3, 'user_id' => $user->id])->orderBy('id', 'desc')->first();
-//        if (empty($model) || (date('Y-m-d', $model->start_time) != date('Y-m-d'))) {
-        if (true) {
+        if (empty($model) || (date('Y-m-d', $model->start_time) != date('Y-m-d'))) {
+//        if (true) {
             $temp_reward_model = new TempReward();
             $temp_reward_model->timestamps = true;
             $temp_reward_model->type = 3;
