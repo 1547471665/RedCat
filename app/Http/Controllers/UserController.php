@@ -150,7 +150,7 @@ class UserController extends Controller
             'temp_force' => $sign_temp_force_value,
             'force_value' => $user->force,
             'temp_force_value' => $temp_force_value,
-            'money' => $user->money . "",
+            'money' => $user->money,
             'api_ticket' => $user->id,
         ];
         return ['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data];
