@@ -9,13 +9,11 @@
 namespace App\Http\Controllers;
 
 
-use App\Models\Car;
 use App\Models\RewardHistory;
 use App\Models\RewardUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Crypt;
 
 class WithMoneyController extends Controller
 {

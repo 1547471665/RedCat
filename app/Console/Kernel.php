@@ -5,8 +5,8 @@ namespace App\Console;
 use App\Console\Commands\SettingCommand;
 use App\Console\Commands\TestCommand;
 use App\Console\Commands\WithmoneyCommand;
-use App\Models\Car;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Lumen\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
@@ -32,10 +32,11 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         //
-        $params = ['make' => 'xixixi', 'model' => '222', 'year' => 2018];
-        $schedule->call(function () use ($params) {
-            Car::create($params);
-        })->everyMinute();
-
+        if (Cache::has('setting')) {
+            $config = Cache::get('setting');
+            $schedule->command('withmoney')->cron($config['Cron_Plan_With_Money']->value);
+        } else {
+            $schedule->command('withmoney')->everyFifteenMinutes();
+        }
     }
 }

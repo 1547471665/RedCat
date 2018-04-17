@@ -11,18 +11,18 @@
 |
 */
 
+//$router->post('user/login', 'UserController@login');
+//$router->post('user/register', 'UserController@register');
+//$router->post('user/register/{fid}', 'UserController@register');
+
 $router->get('/', function () use ($router) {
     return "Welcome to visit RedCat ";
 });
-
 $router->get('user/info', [
     'middleware' => 'authToken',
     'uses' => 'UserController@info',
 ]);//获取用户信息  √
 $router->post('user/login', 'WeiXinController@Login');//登陆/注册 √
-//$router->post('user/login', 'UserController@login');
-//$router->post('user/register', 'UserController@register');
-//$router->post('user/register/{fid}', 'UserController@register');
 $router->group(['middleware' => 'authToken', 'prefix' => 'api/v1'], function ($router) {
     $router->get('sblist', 'WithMoneyController@ListWithMoney');//猫币列表
     $router->post('click', 'WithMoneyController@ClickWithMoney');//点击领取猫币
@@ -37,5 +37,11 @@ $router->group(['middleware' => 'authToken', 'prefix' => 'api/v1'], function ($r
 });
 $router->group(['prefix' => 'wx'], function ($router) {
     $router->get('/', "WeiXinController@Index");//消息服务器配置验证 √
+});
+$router->group(['prefix' => 'config'], function ($router) {
+    $router->get('list', "SettingController@index");//配置列表
+    $router->get('add', "SettingController@create");//配置新增
+    $router->get('set', "SettingController@update");//配置设置
+    $router->get('del', "SettingController@delete");//配置删除
 });
 
