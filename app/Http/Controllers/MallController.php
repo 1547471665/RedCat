@@ -24,14 +24,14 @@ class MallController extends Controller
     public function Index()
     {
         $data = [];
-        return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
+        return ['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data];
     }
 
     public function List(Request $request)
     {
         $pageSize = $request->input('pageSize', 10);
-        $data = Mall::where('status', 1)->orderBy('id', 'desc')->paginate($pageSize)->toArray();
-        return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
+        $data = Mall::where('status', 1)->orderBy('id', 'desc')->paginate($pageSize);
+        return ['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data];
     }
 
 

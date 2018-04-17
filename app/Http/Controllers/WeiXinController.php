@@ -63,8 +63,7 @@ class WeiXinController extends Controller
             ]
         ]);
         $body = $res->getBody();
-        echo $body->getContents();
-        die();
+        return $body->getContents();
     }
 
     /**
@@ -76,7 +75,7 @@ class WeiXinController extends Controller
         $template_id = "tGDHvTOQlX8oNKzI_yV0AsGnTxzIED2h0FRfCW1_9Ag";
         $uri = "https://api.weixin.qq.com/cgi-bin/message/wxopen/template/send?access_token=" . $this->access_token;
         $client = new Client();
-        $client->post($uri, [
+        $res = $client->post($uri, [
             'form_params' => [
                 'touser' => $user->openId,
                 'template_id' => $template_id,
@@ -100,6 +99,8 @@ class WeiXinController extends Controller
                 'emphasis_keyword' => 'keyword1.DATA',
             ]
         ]);
+        $body = $res->getBody();
+        return $body->getContents();
     }
 
     /**
@@ -120,7 +121,7 @@ class WeiXinController extends Controller
             $user->save();
             unset($user->username);
             unset($user->openid);
-            return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['user_info' => $user]]);
+            return ['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['user_info' => $user]];
         }
         $user_info = json_decode(self::getUserInfo($request));
         $user = User::where('openId', $user_info->openId)->first();
@@ -137,7 +138,7 @@ class WeiXinController extends Controller
             unset($user->username);
             unset($user->openid);
             self::TempRewardForce($user);//添加登陆临时握力
-            return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['user_info' => $user]]);
+            return ['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['user_info' => $user]];
         } else {//用户不存在。注册
             $password = "123456";
             $user = new User;
@@ -159,7 +160,7 @@ class WeiXinController extends Controller
             if ($user->save()) {
                 unset($user->username);
                 unset($user->openid);
-                return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['user_info' => $user]]);
+                return ['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['user_info' => $user]];
             } else {
                 return abort(50000, error_code(50000));
             }
@@ -317,7 +318,7 @@ class WeiXinController extends Controller
             'from_id' => $user->id,
         ]);
         //添加到队列  通知邀请用户
-        return response()->json(['StatusCode' => 10000, 'message' => error_code(10000)]);
+        return ['StatusCode' => 10000, 'message' => error_code(10000)];
     }
 
     /**

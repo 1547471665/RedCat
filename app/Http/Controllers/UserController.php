@@ -30,8 +30,8 @@ class UserController extends Controller
     public function ForceList()
     {
         $user = Auth::user();
-        $data = ForceHistory::where('user_id', $user->id)->get()->toArray();
-        return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
+        $data = ForceHistory::where('user_id', $user->id)->get();
+        return ['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data];
     }
 
     /**
@@ -39,14 +39,15 @@ class UserController extends Controller
      * @return \Illuminate\Http\RedirectResponse|\Laravel\Lumen\Http\Redirector
      * 创建好友邀请链接
      */
-    public function CreateInvitationFriendsUrl(Request $request)
+    public function CreateInvitationFriendsUrl()
     {
-        if (empty($this->_user)) {
+        $user = Auth::user();
+        if (empty($user)) {
             abort(40102, error_code(40102));
         } else {
-            $url = \url('user/register', ['id' => Crypt::encrypt($this->_user->id)], false);
+            $url = \url('user/register', ['id' => Crypt::encrypt($user->id)], false);
         }
-        return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['inv_url' => $url]]);
+        return ['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['inv_url' => $url]];
     }
 
 
@@ -63,7 +64,7 @@ class UserController extends Controller
 //                $user->api_token = $token;
                 $user->login_time = date('Y-m-d');
                 $user->save();
-                return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['api_token' => $user->api_token]]);
+                return ['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['api_token' => $user->api_token]];
             } else {
                 return abort(40100, error_code(40100));
             }
@@ -101,7 +102,7 @@ class UserController extends Controller
                 if (!empty($fid)) {//设置邀请用户奖励
                     self::AcceptInvitation($user, $fid);
                 }
-                return response()->json(['StatusCode' => 10000, 'message' => error_code(10000)]);
+                return ['StatusCode' => 10000, 'message' => error_code(10000)];
             } else {
                 return abort(50000, error_code(50000));
             }
@@ -125,10 +126,20 @@ class UserController extends Controller
     {
         $user = Auth::user();
         $invitation_number = User::where('invitation_id', $user->id)->count();
-        $force_value = ForceHistory::where('user_id', $user->id)->sum('force_value');
-        $temp_force_value = TempReward::where('user_id', $user->id)->sum('force');
-        $login_temp_force_value = TempReward::where('user_id', $user->id)->where('type', 1)->sum('force');
-        $sign_temp_force_value = TempReward::where('user_id', $user->id)->where('type', 3)->sum('force');
+        $temp_force_value = TempReward::where([
+            ['user_id', $user->id],
+            ['invalid_time', '>', time()]
+        ])->sum('force');
+        $login_temp_force_value = TempReward::where([
+            ['user_id', $user->id],
+            ['type', 1],
+            ['invalid_time', '>', time()]
+        ])->sum('force');
+        $sign_temp_force_value = TempReward::where([
+            ['user_id', $user->id],
+            ['type', 3],
+            ['invalid_time', '>', time()]
+        ])->sum('force');
         unset($user->openId);
         unset($user->username);
         $data = [
@@ -137,12 +148,12 @@ class UserController extends Controller
             'max_invi' => $this->_config['Invi_Num_Toplimit']->value,
             'login_reward_force' => $login_temp_force_value,
             'temp_force' => $sign_temp_force_value,
-            'force_value' => $force_value,
+            'force_value' => $user->force,
             'temp_force_value' => $temp_force_value,
-            'money' => $user->money,
+            'money' => $user->money . "",
             'api_ticket' => $user->id,
         ];
-        return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
+        return ['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data];
     }
 
     /**
@@ -171,7 +182,7 @@ class UserController extends Controller
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s'),
             ]);
-            return response()->json(['StatusCode' => 10000, 'message' => error_code(10001), 'data' => ['temp_force' => $temp_reward_model->force]]);
+            return ['StatusCode' => 10000, 'message' => error_code(10001), 'data' => ['temp_force' => $temp_reward_model->force]];
         }
         return abort(40111, error_code(40111));
     }

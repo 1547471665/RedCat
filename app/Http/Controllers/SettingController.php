@@ -29,7 +29,7 @@ class SettingController extends Controller
     {
         $model = Setting::create($request->all());
         self::SetCache($model);
-        return response()->json($model);
+        return $model;
     }
 
     public function update(Request $request, $id)
@@ -40,7 +40,7 @@ class SettingController extends Controller
         $model->des = $request->input('des');
         $model->save();
         self::SetCache($model);
-        return response()->json($model);
+        return $model;
     }
 
     public function delete($id)
@@ -48,13 +48,13 @@ class SettingController extends Controller
         $model = Setting::find($id);
         $model->delete();
         self::SetCache($model);
-        return response()->json('删除成功');
+        return '删除成功';
     }
 
     public function index()
     {
         $model = Setting::all();
-        return response()->json($model);
+        return $model;
     }
 
     private function SetCache($model)

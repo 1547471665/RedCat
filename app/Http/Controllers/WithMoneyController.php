@@ -28,7 +28,9 @@ class WithMoneyController extends Controller
 
 
     /**
-     * @return \Illuminate\Http\JsonResponse
+     * @param Request $request
+     * @return array
+     * @throws \Illuminate\Validation\ValidationException
      * 点击领取撒币
      */
     public function ClickWithMoney(Request $request)
@@ -38,7 +40,7 @@ class WithMoneyController extends Controller
         $id = $request->input('id');
         $reward_model = RewardUser::find($id);
         if (is_null($reward_model) || ($reward_model->user_id != $this->_user->id)) {
-            return response()->json(['StatusCode' => 40000, 'message' => error_code(40000)]);
+            return ['StatusCode' => 40000, 'message' => error_code(40000)];
         }
         $this->_user->money += $reward_model->money;//添加撒币
         if (RewardUser::where('user_id', $this->_user->id)->count() < $max_number) {
@@ -54,26 +56,27 @@ class WithMoneyController extends Controller
                 '`type`' => 0,
             ]);
             $reward_model->delete();//清除奖励池
-            return response()->json(['StatusCode' => 10000, 'message' => error_code(10000)]);
+            return ['StatusCode' => 10000, 'message' => error_code(10000)];
         } else {
-            return response()->json(['StatusCode' => 50000, 'message' => error_code(50000)]);
+            return ['StatusCode' => 50000, 'message' => error_code(50000)];
         }
     }
 
+
     /**
-     * @return \Illuminate\Http\JsonResponse
+     * @return array
      * 获取撒币列表
      */
-    public function ListWithMoney(Request $request)
+    public function ListWithMoney()
     {//@TODO 固定下标
         $max_number = $this->_config['Max_Position']->value;
-        $data = RewardUser::where('user_id', $this->_user->id)->get()->toArray();
+        $data = RewardUser::where('user_id', $this->_user->id)->get();
         $count = count($data);
         if ($count >= $max_number) {
             $this->_user->withmoney_status = 0;
             $this->_user->save();
         }
-        return response()->json([
+        return [
             'StatusCode' => 10000,
             'message' => error_code(10000),
             'data' => $data,
@@ -81,16 +84,16 @@ class WithMoneyController extends Controller
             'money' => $this->_user->money,
             'api_ticket' => $this->_user->id
 //            'api_ticket' => Crypt::encrypt($this->_user->id)
-        ]);
+        ];
     }
 
     public function MoneyHistory(Request $request)
     {
         $type_name = ["铲币", "签到", "邀请好友"];
         $pageSize = $request->input('pageSize', 10);
-        $model = RewardHistory::where('user_id', $this->_user->id)->orderBy('id', 'desc')->paginate($pageSize)->toArray();
+        $model = RewardHistory::where('user_id', $this->_user->id)->orderBy('id', 'desc')->paginate($pageSize);
         $data = ['list' => $model, 'money' => $this->_user->money];
-        return response()->json(['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data]);
+        return ['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data];
     }
 
 }
