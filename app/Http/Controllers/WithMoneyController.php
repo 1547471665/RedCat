@@ -47,6 +47,14 @@ class WithMoneyController extends Controller
         } else {
             $this->_user->withmoney_status = 0;
         }
+        if (!is_null($this->_user->reward_position)) {
+            $position = json_decode($this->_user->reward_position, true);
+            $_position = array_search(intval($id), $position, true);
+            if ($_position !== false) {
+                $position[$_position] = 0;
+                $this->_user->reward_position = json_encode($position);
+            }
+        }
         if ($this->_user->save()) {
             RewardHistory::create([
                 'user_id' => $this->_user->id,
@@ -70,7 +78,27 @@ class WithMoneyController extends Controller
     public function ListWithMoney()
     {//@TODO 固定下标
         $max_number = $this->_config['Max_Position']->value;
-        $data = RewardUser::where('user_id', $this->_user->id)->get();
+        if (is_null($this->_user->reward_position)) {//不存在的话设置默认位置
+            $pre_position = $position = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0, 6 => 0, 7 => 0, 8 => 0, 9 => 0, 10 => 0,];
+        } else {
+            $pre_position = $position = json_decode($this->_user->reward_position, true);
+        }
+        $data = RewardUser::where('user_id', $this->_user->id)->get()->each(function ($model) use (&$position) {
+            if (!in_array($model->id, $position, true)) {
+                $_position = array_search(0, $position, true);//寻找空位置
+                if (false !== $_position) {//没有空位
+                    $position[$_position] = $model->id;
+                    $model->position = $_position;
+                }
+            } else {
+                $_position = array_search($model->id, $position, true);//记录当前位置
+                $model->position = $_position;
+            }
+        });
+        if (!empty(array_diff_assoc($position, $pre_position))) {//两个位置是否一致
+            $this->_user->reward_position = json_encode($position);
+            $this->_user->save();
+        }
         $count = count($data);
         if ($count >= $max_number) {
             $this->_user->withmoney_status = 0;
