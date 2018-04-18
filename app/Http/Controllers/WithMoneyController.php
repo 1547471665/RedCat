@@ -82,6 +82,16 @@ class WithMoneyController extends Controller
             $pre_position = $position = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0, 6 => 0, 7 => 0, 8 => 0, 9 => 0, 10 => 0,];
         } else {
             $pre_position = $position = json_decode($this->_user->reward_position, true);
+            $list = RewardUser::where('user_id', $this->_user->id)->whereIn('id', $pre_position)->get()->pluck('id')->toArray();
+            if (empty($list)) {
+                $position = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0, 6 => 0, 7 => 0, 8 => 0, 9 => 0, 10 => 0,];
+            } else {
+                foreach ($position as $k => $v) {
+                    if (!in_array($v, $list)) {
+                        $position[$k] = 0;
+                    }
+                }
+            }
         }
         $data = RewardUser::where('user_id', $this->_user->id)->get()->each(function ($model) use (&$position) {
             if (!in_array($model->id, $position, true)) {
@@ -97,13 +107,16 @@ class WithMoneyController extends Controller
         });
         if (!empty(array_diff_assoc($position, $pre_position))) {//两个位置是否一致
             $this->_user->reward_position = json_encode($position);
-            $this->_user->save();
         }
         $count = count($data);
         if ($count >= $max_number) {
             $this->_user->withmoney_status = 0;
-            $this->_user->save();
+        } else {
+            if ($this->_user->withmoney_status != 1) {
+                $this->_user->withmoney_status = 1;
+            }
         }
+        $this->_user->save();
         return [
             'StatusCode' => 10000,
             'message' => error_code(10000),
