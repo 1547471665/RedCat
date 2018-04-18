@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\View;
 
 class WangController extends Controller
 {
@@ -27,6 +28,7 @@ class WangController extends Controller
 
     public function Index()
     {
+        return  \view('wang.index');
         return "This is WangController";
         $params = ['make' => '长城', 'model' => '宏光', 'year' => 2018];
         $date = Carbon::now()->addMinutes(1);

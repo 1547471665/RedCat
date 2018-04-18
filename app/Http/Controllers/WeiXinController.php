@@ -117,6 +117,8 @@ class WeiXinController extends Controller
             } else {
                 $user->continuation_days = 1;
             }
+            $token = str_random(60);
+            $user->api_token = $token;
             $user->login_time = date('Y-m-d');
             $user->save();
             unset($user->username);
@@ -127,7 +129,7 @@ class WeiXinController extends Controller
         $user = User::where('openId', $user_info->openId)->first();
         if ($user) {//用户存在
             $token = str_random(60);
-//                $user->api_token = $token;
+            $user->api_token = $token;
             if (self::continuation_days($user)) {
                 $user->continuation_days = $user->continuation_days + 1;
             } else {

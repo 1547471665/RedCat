@@ -12,7 +12,7 @@ class AuthToken
         if (Auth::check()) {
             return $next($request);
         } else {
-            abort(401);
+            abort(40101, error_code(40101));
         }
     }
 }

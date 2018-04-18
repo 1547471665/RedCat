@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Console\Commands\SettingCommand;
+use App\Console\Commands\WebSocketCommand;
 use App\Console\Commands\TestCommand;
 use App\Console\Commands\WithmoneyCommand;
 use Illuminate\Console\Scheduling\Schedule;
@@ -20,6 +21,7 @@ class Kernel extends ConsoleKernel
         TestCommand::class,
         WithmoneyCommand::class,
         SettingCommand::class,
+        WebSocketCommand::class,
         //
     ];
 
