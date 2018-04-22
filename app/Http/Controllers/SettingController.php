@@ -28,18 +28,18 @@ class SettingController extends Controller
     public function create(Request $request)
     {
         $model = Setting::create($request->all());
-        self::SetCache($model);
+        self::SetCache();
         return $model;
     }
 
     public function update(Request $request, $id)
     {
         $model = Setting::find($id);
-        $model->key = $request->input('key');
-        $model->value = $request->input('value');
-        $model->des = $request->input('des');
+        $model->key = $request->input('key', $model->key);
+        $model->value = $request->input('value', $model->value);
+        $model->des = $request->input('des', $model->des);
         $model->save();
-        self::SetCache($model);
+        self::SetCache();
         return $model;
     }
 
@@ -47,7 +47,7 @@ class SettingController extends Controller
     {
         $model = Setting::find($id);
         $model->delete();
-        self::SetCache($model);
+        self::SetCache();
         return '删除成功';
     }
 
@@ -57,9 +57,9 @@ class SettingController extends Controller
         return $model;
     }
 
-    private function SetCache($model)
+    private function SetCache()
     {
-        Cache::forever('setting', IndexBy($model, 'key'));
+        Cache::forever('setting', IndexBy(Setting::all(), 'key'));
     }
 
 

@@ -41,7 +41,7 @@ $router->group(['prefix' => 'wx'], function ($router) {
 $router->group(['prefix' => 'config'], function ($router) {
     $router->get('list', "SettingController@index");//配置列表
     $router->get('add', "SettingController@create");//配置新增
-    $router->get('set', "SettingController@update");//配置设置
+    $router->get('set/{id}', "SettingController@update");//配置设置
     $router->get('del', "SettingController@delete");//配置删除
 });
 $router->get('socket', 'WangController@Index');

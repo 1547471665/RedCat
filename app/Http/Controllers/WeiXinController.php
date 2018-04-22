@@ -287,9 +287,11 @@ class WeiXinController extends Controller
         $user->save();
         $number = User::where('invitation_id', $fid)->count();
         if ($number < $this->_config['Invi_Num_Toplimit']->value) {
+            $force_type = 1;
             $force = $this->_config['Innumber_Reward_Force']->value;
             $f_user->force += $force;
         } else {
+            $force_type = 2;
             $force = $this->_config['Invi_Tmp_Reward_Force']->value;
             $temp_reward_model = new TempReward();
             $temp_reward_model->timestamps = true;
@@ -320,7 +322,12 @@ class WeiXinController extends Controller
             'from_id' => $user->id,
         ]);
         //添加到队列  通知邀请用户
-        return ['StatusCode' => 10000, 'message' => error_code(10000)];
+        $data = [
+            'money' => 1,
+            'force' => ($force_type == 1) ? $force : 0,
+            'tmp_force' => ($force_type == 2) ? $force : 0,
+        ];
+        return ['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data];
     }
 
     /**

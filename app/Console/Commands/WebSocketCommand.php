@@ -26,17 +26,38 @@ class WebSocketCommand extends Command
     {
         //创建websocket服务器对象，监听0.0.0.0:9502端口
         $ws = new \swoole_websocket_server("0.0.0.0", 9502);
+        /*  $ws->set([
+              'task_worker_num' => 200,
+  //            'daemonize' => true,//守护进程 长时间运行 要开启
+              'backlog' => 128,]);*/
 
         //监听WebSocket连接打开事件
         $ws->on('open', function ($ws, $request) {
-            var_dump($request->fd, $request->get, $request->server);
+//            var_dump($request->fd, $request->get, $request->server);
+            $ws->tick(5000, function () use ($ws, $request) {//执行循环任务
+                $ws->push($request->fd, "定时······\n");
+            });
             $ws->push($request->fd, "hello, welcome\n");
         });
 
+//        $ws->on('task',function ($data) {
+//            echo 111;
+//        });
+//
+//        $ws->on('finish', function ($data) {
+//            echo 222;
+//        });
+
+
         //监听WebSocket消息事件
         $ws->on('message', function ($ws, $frame) {
-            echo "Message: {$frame->data}\n";
+            echo "Message:{$frame->fd}····· {$frame->data}\n";
             $ws->push($frame->fd, "server: {$frame->data}");
+        });
+
+        $ws->on('request', function ($request, $response) {
+//            var_dump($request)
+            $response->end("<h1>hello swoole</h1>");
         });
 
         //监听WebSocket连接关闭事件
@@ -45,6 +66,7 @@ class WebSocketCommand extends Command
         });
 
         $ws->start();
+
     }
 
 }
