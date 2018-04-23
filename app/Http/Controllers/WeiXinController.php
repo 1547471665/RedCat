@@ -112,6 +112,9 @@ class WeiXinController extends Controller
     {
         if ($request->has('api_token')) {
             $user = User::where('api_token', $request->input('api_token'))->first();
+            if (is_null($user)) {
+                abort(40100, error_code(40100));
+            }
             if (self::continuation_days($user)) {
                 $user->continuation_days = $user->continuation_days + 1;
             } else {
