@@ -23,6 +23,9 @@ class WithMoneyController extends Controller
     public function __construct(Request $request)
     {
         $this->_user = Auth::user();
+        if (is_null($this->_user)) {
+            abort(40100, error_code(40100));
+        }
         $this->_config = Cache::get('setting');
     }
 
@@ -76,56 +79,8 @@ class WithMoneyController extends Controller
      * 获取撒币列表
      */
     public function ListWithMoney()
-    {//@TODO 固定下标
-        $max_number = $this->_config['Max_Position']->value;
-        if (is_null($this->_user->reward_position)) {//不存在的话设置默认位置
-            $pre_position = $position = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0, 6 => 0, 7 => 0, 8 => 0, 9 => 0, 10 => 0,];
-        } else {
-            $pre_position = $position = json_decode($this->_user->reward_position, true);
-            $list = RewardUser::where('user_id', $this->_user->id)->whereIn('id', $pre_position)->get()->pluck('id')->toArray();
-            if (empty($list)) {
-                $position = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0, 6 => 0, 7 => 0, 8 => 0, 9 => 0, 10 => 0,];
-            } else {
-                foreach ($position as $k => $v) {
-                    if (!in_array($v, $list)) {
-                        $position[$k] = 0;
-                    }
-                }
-            }
-        }
-        $data = RewardUser::where('user_id', $this->_user->id)->get()->each(function ($model) use (&$position) {
-            if (!in_array($model->id, $position, true)) {
-                $_position = array_search(0, $position, true);//寻找空位置
-                if (false !== $_position) {//没有空位
-                    $position[$_position] = $model->id;
-                    $model->position = $_position;
-                }
-            } else {
-                $_position = array_search($model->id, $position, true);//记录当前位置
-                $model->position = $_position;
-            }
-        });
-        if (!empty(array_diff_assoc($position, $pre_position))) {//两个位置是否一致
-            $this->_user->reward_position = json_encode($position);
-        }
-        $count = count($data);
-        if ($count >= $max_number) {
-            $this->_user->withmoney_status = 0;
-        } else {
-            if ($this->_user->withmoney_status != 1) {
-                $this->_user->withmoney_status = 1;
-            }
-        }
-        $this->_user->save();
-        return [
-            'StatusCode' => 10000,
-            'message' => error_code(10000),
-            'data' => $data,
-            'force' => $this->_user->force,
-            'money' => $this->_user->money,
-            'api_ticket' => $this->_user->id
-//            'api_ticket' => Crypt::encrypt($this->_user->id)
-        ];
+    {
+        return RewardUser::ListWithMoney($this->_user);
     }
 
     public function MoneyHistory(Request $request)

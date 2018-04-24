@@ -9,6 +9,8 @@
 namespace App\Console\Commands;
 
 
+use App\Models\RewardUser;
+use App\Models\User;
 use Illuminate\Console\Command;
 
 class WebSocketCommand extends Command
@@ -34,9 +36,23 @@ class WebSocketCommand extends Command
         //监听WebSocket连接打开事件
         $ws->on('open', function ($ws, $request) {
 //            var_dump($request->fd, $request->get, $request->server);
-            $ws->tick(5000, function () use ($ws, $request) {//执行循环任务
-                $ws->push($request->fd, "定时······\n");
+            $ws->tick(60000, function () use ($ws, $request) {//执行循环任务
+                if (isset($request->get['api_token']) && $request->server['path_info'] == "/sblist") {
+                    $user = User::where('api_token', $request->get['api_token'])->first();
+                    if (!is_null($user)) {
+                        $list = RewardUser::ListWithMoney($user);
+                        $ws->push($request->fd, json_encode($list));
+                    }
+                }
+//                $ws->push($request->fd, "定时······\n");
             });
+            if (isset($request->get['api_token']) && $request->server['path_info'] == "/sblist") {
+                $user = User::where('api_token', $request->get['api_token'])->first();
+                if (!is_null($user)) {
+                    $list = RewardUser::ListWithMoney($user);
+                    $ws->push($request->fd, json_encode($list));
+                }
+            }
             $ws->push($request->fd, "hello, welcome\n");
         });
 

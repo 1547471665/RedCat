@@ -11,11 +11,11 @@ namespace App\Http\Controllers;
 
 use App\Jobs\WithmoneyJob;
 use App\Listeners\ExampleListener;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\View;
 
 class WangController extends Controller
 {
@@ -28,7 +28,8 @@ class WangController extends Controller
 
     public function Index()
     {
-        return  \view('wang.index');
+        $user = User::first();
+        return View('wang.index', ['user' => $user]);
         return "This is WangController";
         $params = ['make' => '长城', 'model' => '宏光', 'year' => 2018];
         $date = Carbon::now()->addMinutes(1);
