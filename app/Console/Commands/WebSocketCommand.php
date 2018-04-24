@@ -12,6 +12,8 @@ namespace App\Console\Commands;
 use App\Models\RewardUser;
 use App\Models\User;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Request;
 
 class WebSocketCommand extends Command
 {
@@ -28,10 +30,14 @@ class WebSocketCommand extends Command
     {
         //创建websocket服务器对象，监听0.0.0.0:9502端口
         $ws = new \swoole_websocket_server("0.0.0.0", 9502);
-        /*  $ws->set([
-              'task_worker_num' => 200,
-  //            'daemonize' => true,//守护进程 长时间运行 要开启
-              'backlog' => 128,]);*/
+        if (App::environment() != 'local') {
+            $ws->set([
+//            'task_worker_num' => 5,
+                'daemonize' => true,//守护进程 长时间运行 要开启
+                'ssl_cert_file' => '/etc/nginx/cert/214587431540625.pem',
+                'ssl_key_file' => '/etc/nginx/cert/214587431540625.key',
+                'backlog' => 128,]);
+        }
 
         //监听WebSocket连接打开事件
         $ws->on('open', function ($ws, $request) {
@@ -53,7 +59,6 @@ class WebSocketCommand extends Command
                     $ws->push($request->fd, json_encode($list));
                 }
             }
-            $ws->push($request->fd, "hello, welcome\n");
         });
 
 //        $ws->on('task',function ($data) {
