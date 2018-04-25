@@ -124,6 +124,7 @@ class WeiXinController extends Controller
             $user->api_token = $token;
             $user->login_time = date('Y-m-d');
             $user->save();
+            self::TempRewardForce($user);//添加登陆临时握力
             unset($user->username);
             unset($user->openid);
             return ['StatusCode' => 10000, 'message' => error_code(10000), 'data' => ['user_info' => $user]];
@@ -271,7 +272,7 @@ class WeiXinController extends Controller
         if ($request->has(['api_token', 'api_ticket'])) {
             $user = Auth::user();
             if ($user->invitation_id > 0) {
-                return abort(40000, error_code(40000));
+                return abort(40000, '该用户已经被邀请过');
             }
             $api_ticket = $request->input('api_ticket');
 //            $fid = Crypt::decrypt(urldecode($api_ticket));
@@ -279,13 +280,14 @@ class WeiXinController extends Controller
             $user->invitation_id = $fid;
             $f_user = User::find($fid);
             if (is_null($f_user)) {
-                return abort(40000, error_code(40000));
+                return abort(40000, '邀请人不存在');
             }
         } else {
             return abort(40000, error_code(40000));
         }
         if ($fid == $user->id || $fid > $user->id) {
-            abort(40000, error_code(40000));//不能邀请自己
+            return ['StatusCode' => 10000, 'message' => error_code(10000)];
+//            abort(40000, error_code(40000));//不能邀请自己
         }
         $user->save();
         $number = User::where('invitation_id', $fid)->count();

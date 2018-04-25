@@ -13,7 +13,6 @@ use App\Models\RewardUser;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Request;
 
 class WebSocketCommand extends Command
 {
