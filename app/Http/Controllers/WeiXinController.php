@@ -272,7 +272,8 @@ class WeiXinController extends Controller
         if ($request->has(['api_token', 'api_ticket'])) {
             $user = Auth::user();
             if ($user->invitation_id > 0) {
-                return abort(40000, '该用户已经被邀请过');
+//                return abort(40000, '该用户已经被邀请过');
+                return ['StatusCode' => 10000, 'message' => error_code(10000)];
             }
             $api_ticket = $request->input('api_ticket');
 //            $fid = Crypt::decrypt(urldecode($api_ticket));
