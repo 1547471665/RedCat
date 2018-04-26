@@ -42,7 +42,7 @@ class WebSocketCommand extends Command
         $ws->on('open', function ($ws, $request) {
 //            var_dump($request->fd, $request->get, $request->server);
             $ws->tick(60000, function () use ($ws, $request) {//执行循环任务
-                if (isset($request->get['api_token']) && $request->server['path_info'] == "/sblist") {
+                if (isset($request->get['api_token']) && $request->server['path_info'] == "/wss/sblist") {
                     $user = User::where('api_token', $request->get['api_token'])->first();
                     if (!is_null($user)) {
                         $list = RewardUser::ListWithMoney($user);
@@ -51,7 +51,7 @@ class WebSocketCommand extends Command
                 }
 //                $ws->push($request->fd, "定时······\n");
             });
-            if (isset($request->get['api_token']) && $request->server['path_info'] == "/sblist") {
+            if (isset($request->get['api_token']) && $request->server['path_info'] == "/wss/sblist") {
                 $user = User::where('api_token', $request->get['api_token'])->first();
                 if (!is_null($user)) {
                     $list = RewardUser::ListWithMoney($user);
