@@ -15,9 +15,11 @@ use App\Models\ForceHistory;
 use App\Models\TempReward;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Redis;
 
 class WangController extends Controller
 {
@@ -28,10 +30,18 @@ class WangController extends Controller
         ],
     ];
 
-    public function Index()
+    public function Index(Request $request)
     {
+//        Redis::set('hello','world');//设置key
+//        Redis::expire('hello',10);//设置过期
+        return Redis::randomkey();
+        $redis = new \Redis();
+        $redis->connect('121.40.148.31');
+        $redis->auth('Hello_Redis');
+        $redis->close();
+        echo "Server is running: " . $redis->ping();
 //        self::LostLoginTempRewardInsert(date('Y-m-d'));
-//        die();
+        die();
         $user = User::first();
         return View('wang.index', ['user' => $user]);
         return "This is WangController";

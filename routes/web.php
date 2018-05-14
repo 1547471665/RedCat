@@ -30,10 +30,27 @@ $router->group(['middleware' => 'authToken', 'prefix' => 'api/v1'], function ($r
     $router->get('createinvitation', 'UserController@CreateInvitationFriendsUrl');//创建邀请链接
     $router->get('sign', 'UserController@SignRewardForce');//签到 √
     $router->get('force', 'UserController@ForceList');//握力记录
-    $router->get('mall', 'MallController@List');//商城列表
     $router->get('getshare', 'WeiXinController@AcceptInvitation');//接受邀请
     $router->post('getshare', 'WeiXinController@AcceptInvitation');//接受邀请
     $router->get('sendmsg', 'WeiXinController@SendMsgByCustomService');//发送客服消息
+
+
+    $router->get('address', 'AddressController@index');//收货地址列表
+    $router->post('address', 'AddressController@add');//添加收货地址
+    $router->post('address/{id}', 'AddressController@set');//修改收货地址
+    $router->delete('address/{id}', 'AddressController@del');//删除收货地址
+
+    $router->get('mall', 'MallController@List');//商城列表
+    $router->get('shopcar', 'MallController@Shopcar');//购物车
+    $router->post('shopcar/{id}', 'MallController@ShopCarSet');//修改购物车
+    $router->delete('shopcar', 'MallController@Clear');//清空购物车
+
+    $router->get('order', 'OrderController@Index');//获取订单信息
+    $router->post('order', 'OrderController@Add');//创建订单
+    $router->post('order/{id}', 'OrderController@OrderSet');//修改订单
+    $router->delete('order', 'OrderController@Del');//删除订单
+    $router->post('pay', 'WeixinPayController@Pay');//支付订单
+
 });
 $router->group(['prefix' => 'wx'], function ($router) {
     $router->get('/', "WeiXinController@Index");//消息服务器配置验证 √

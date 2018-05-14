@@ -9,6 +9,7 @@
 namespace App\Console\Commands;
 
 
+use App\Models\RangeMoney;
 use App\Models\RewardUser;
 use App\Models\Setting;
 use App\Models\TempReward;
@@ -150,10 +151,13 @@ class WithmoneyCommand extends Command
      */
     private function AddPlan($config, $last_id)
     {
+        $set_number = (int)$config['set_time_money_number']->value;
+        $number = User::where('login_time', date('Y-m-d'))->count('id');
+        $money = self::GetNumberinterval($number) * $number;
         $invalid_time = $config['set_time_invalid_limit']->value;
         $dispense_invalid_time = $config['set_time_dispense_limit']->value;
         $data = [
-            'number' => $config['set_time_money_number']->value,
+            'number' => $money,
             'last_id' => $last_id,
             'start_time' => time(),
             'invalid_time' => time() + $invalid_time,
@@ -188,6 +192,45 @@ class WithmoneyCommand extends Command
             'des' => $des,
         ];
         Setting::create($data);
+    }
+
+    /**
+     * 获取随机币数额
+     * @param $number
+     * @return float|int
+     */
+    private function GetNumberinterval($number)
+    {
+        $model = RangeMoney::all();
+        $model_array = $model->toArray();
+        $list = array_unique(array_merge(array_column($model_array, 'min'), array_column($model_array, 'max')));
+        sort($list);
+        $position = array_search($number, $list);
+        if ($position === false) {
+            array_push($list, $number);
+            sort($list);
+            $position = array_search($number, $list);
+            $data = [
+                'min' => $list[$position - 1],
+                'max' => isset($list[$position + 1]) ? $list[$position + 1] : $list[$position - 1],
+            ];
+        } else {
+            if ($position % 2 == 1) {
+                $data = [
+                    'min' => $list[$position - 1],
+                    'max' => $list[$position],
+                ];
+            } else {
+                $data = [
+                    'min' => $list[$position],
+                    'max' => isset($list[$position + 1]) ? $list[$position + 1] : $list[$position - 1],
+                ];
+            }
+
+        }
+        $result = $model->where('min', $data['min'])->where('max', $data['max'])->first();
+        $res = rand($result->min_money * 100, $result->max_money * 100) / 100;
+        return $res;
     }
 
 
