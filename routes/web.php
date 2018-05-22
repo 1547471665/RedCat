@@ -47,7 +47,7 @@ $router->group(['middleware' => 'authToken', 'prefix' => 'api/v1'], function ($r
 
     $router->get('order', 'OrderController@Index');//获取订单信息
     $router->post('order', 'OrderController@Add');//创建订单
-    $router->post('order/{id}', 'OrderController@OrderSet');//修改订单
+    $router->post('order/{id}', 'OrderController@Complete');//完成订单
     $router->delete('order', 'OrderController@Del');//删除订单
     $router->post('pay', 'WeixinPayController@Pay');//支付订单
 
@@ -62,4 +62,5 @@ $router->group(['prefix' => 'config'], function ($router) {
     $router->get('del', "SettingController@delete");//配置删除
 });
 $router->get('socket', 'WangController@Index');
+$router->get('payment', 'WeixinPayController@Index');
 

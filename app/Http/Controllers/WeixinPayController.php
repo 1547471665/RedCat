@@ -9,62 +9,97 @@
 namespace App\Http\Controllers;
 
 
-use Carbon\Carbon;
-use GuzzleHttp\Client;
-use Illuminate\Support\Facades\Cache;
+use App\Models\RewardHistory;
+use Illuminate\Support\Facades\App;
+use Yansongda\Pay\Pay;
 
 class WeixinPayController extends Controller
 {
-    private $appid;
-    private $secret;
-    private $access_token;
-    private $_config;
-    private $_uris = [
-        'create_order' => 'https://api.mch.weixin.qq.com/pay/unifiedorder',
-        'select_order' => 'https://api.mch.weixin.qq.com/pay/orderquery',
-        'close_order' => 'https://api.mch.weixin.qq.com/pay/closeorder',
-        'refund_order' => 'https://api.mch.weixin.qq.com/secapi/pay/refund',
-        'select_refund_order' => 'https://api.mch.weixin.qq.com/pay/refundquery',
-        'comment_order' => 'https://api.mch.weixin.qq.com/billcommentsp/batchquerycomment',
-    ];
 
+
+    private $_wechat_payment;
 
     public function __construct()
     {
+        $this->_wechat_payment = Pay::wechat(config('pay.wechat'));
+    }
 
-        $this->_config = \Illuminate\Support\Facades\Cache::get('setting');
-        $this->appid = config('wechat.WECHAT_APPID');
-        $this->secret = config('wechat.WECHAT_SECRET');
-        self::Token();
+    public function Index()
+    {
+        $order = [
+            'out_trade_no' => time(),
+            'body' => 'subject-测试',
+            'total_fee' => '1',
+            'openid' => 'oXP4D5l_XA5ZULmgp1AjyWua4mDQ',
+            /*以下是非必传字段*/
+            'attach'=>'aabbcc',//附加数据
+//            'detail' => '',//商品详情
+//            'time_start'=>'',//交易起始时间
+//            'time_expire'=>'',//交易结束时间
+//            'product_id'=>'',//商品ID
+//            'limit_pay'=>'',//指定支付方式
+        ];
+        $result = $this->_wechat_payment->miniapp($order);
+//        $result = $this->_wechat_payment->verify();
+        return $result;
     }
 
     public function Pay()
     {
-        $data = [];
-        return ['StatusCode' => 10000, 'message' => error_code(10000), 'data' => $data];
+        $order = [
+            'out_trade_no' => time(),
+            'body' => 'subject-测试',
+            'total_fee' => '1',
+            'openid' => 'oXP4D5l_XA5ZULmgp1AjyWua4mDQ',
+        ];
+        $result = $this->_wechat_payment->miniapp($order);
+//        $result = $this->_wechat_payment->verify();
+        return $result;
+
+    }
+
+    public function refund()
+    {
+        $order = [
+            'out_trade_no' => '1514192025',
+            'out_refund_no' => time(),
+            'total_fee' => '1',
+            'refund_fee' => '1',
+            'refund_desc' => '测试退款haha',
+        ];
+        $result = $this->_wechat_payment->refund($order);
+        return $result;
+
+    }
+
+    public function notify()
+    {
+        return $this->_wechat_payment->success();
+
+    }
+
+    public function select_order()
+    {
+        $order = [
+            'out_trade_no' => '1514027114',
+            'type' => 'miniapp'
+        ];
+
+        $result = $this->_wechat_payment->find($order);
+
+        return $result;
     }
 
     /**
-     *获取并设置微信 access_token
+     *
      */
-    private function Token()
+    public function close_order()
     {
-
-        if (Cache::has('wx_token')) {
-            $wx_token = Cache::get('wx_token');
-            $this->access_token = $wx_token->access_token;
-        } else {
-            $uri = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" . $this->appid . "&secret=" . $this->secret;
-//            $wx_token = json_decode(file_get_contents($uri));
-            $client = new Client();
-            $res = $client->get($uri);
-            $code = $res->getStatusCode(); // 200
-            $body = $res->getBody();
-            $wx_token = json_decode($body->getContents());
-            $expiresAt = Carbon::now()->addSeconds($wx_token->expires_in);
-            Cache::add('wx_token', $wx_token, $expiresAt);
-            $this->access_token = $wx_token->access_token;
-        }
+        $order = [
+            'out_trade_no' => '1514027114',
+        ];
+        $result = $this->_wechat_payment->close($order);
+        return $result;
     }
 
 
