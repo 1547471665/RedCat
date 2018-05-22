@@ -12,6 +12,7 @@ namespace App\Http\Controllers;
 use App\Jobs\WithmoneyJob;
 use App\Listeners\ExampleListener;
 use App\Models\ForceHistory;
+use App\Models\RangeMoney;
 use App\Models\TempReward;
 use App\Models\User;
 use Carbon\Carbon;
@@ -32,6 +33,7 @@ class WangController extends Controller
 
     public function Index(Request $request)
     {
+        return self::GetNumberinterval(10);
 //        Redis::set('hello','world');//设置key
 //        Redis::expire('hello',10);//设置过期
         return Redis::randomkey();
@@ -93,6 +95,42 @@ class WangController extends Controller
             ]);
         }
         return true;
+    }
+
+    private function GetNumberinterval($number)
+    {
+        $model = RangeMoney::all();
+        $model_array = $model->toArray();
+        $list = array_unique(array_merge(array_column($model_array, 'min'), array_column($model_array, 'max')));
+        sort($list);
+        $position = array_search($number, $list);
+        if ($position === false) {
+            array_push($list, $number);
+            sort($list);
+            $position = array_search($number, $list);
+            $data = [
+                'min' => $list[$position - 1],
+                'max' => isset($list[$position + 1]) ? $list[$position + 1] : $list[$position - 1],
+            ];
+        } else {
+            if ($position % 2 == 1) {
+                $data = [
+                    'min' => $list[$position - 1],
+                    'max' => $list[$position],
+                ];
+            } else {
+                $data = [
+                    'min' => $list[$position],
+                    'max' => isset($list[$position + 1]) ? $list[$position + 1] : $list[$position - 1],
+                ];
+            }
+
+        }
+        $result = array_first(array_where($model_array, function ($v) use ($data) {
+            return (($v['min'] == $data['min']) && ($v['min'] == $data['min']));
+        }));
+        $res = rand($result['min_money'] * 100, $result['max_money'] * 100) / 100;
+        return $res;
     }
 
 

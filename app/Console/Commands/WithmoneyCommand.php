@@ -28,6 +28,8 @@ class WithmoneyCommand extends Command
 
     private $_config;
 
+    private $_range_money;
+
     public function __construct()
     {
         $this->_config = Cache::get('setting');
@@ -39,12 +41,57 @@ class WithmoneyCommand extends Command
         self::ClearExpireWithPlan();//清除过期撒币计划
         if ($model = WithMoneyPlan::orderBy('id', 'desc')->first()) {//获取最后一条撒币记录
 //            self::CarveUp($this->_config, $model);//分币
-            self::CarveUp2($this->_config, $model);//分币
+            self::CarveUp3($this->_config, $model);//分币
             self::AddPlan($this->_config, $model->id);
         } else {
             self::AddPlan($this->_config, 0);
         }
 //        php D:\phpStudy\PHPTutorial\WWW\lumen\artisan test_command
+    }
+
+    private function CarveUp3($config, WithMoneyPlan $model)
+    {
+        if (RewardUser::where('withmoneyplan_id', $model->id)->count() === 0 && ($model->dispense_invalid_time > time())) {//判断是否已经分配过了，或者已经过期
+            $max_number = $config['set_number']->value;
+            $list_user = [];
+            $datas = [];
+            $user_model = User::where(['login_time' => date('Y-m-d')])->get();//获取登陆时间为当天的用户
+            foreach ($user_model as $user) {
+                if ($user->rewarduser) {
+                    $num = $user->rewarduser->count();
+                    if ($num < $max_number) {
+                        $list_user[$user->id] = ['user_id' => $user->id, 'num' => $num];
+                    }
+                } else {
+                    $list_user[$user->id] = ['user_id' => $user->id, 'num' => 0];
+                }
+            }
+            //获取有效用户 并且 临时握力还未失效的握力 根据用户ID分组
+            $temp_reward = TempReward::selectRaw('user_id,SUM(`force`) AS `force`')->where('invalid_time', '>', time())->whereIn('user_id', array_keys($list_user))->groupBy('user_id')->get();
+            $temp_forces = IndexBy($temp_reward, 'user_id');
+            $this->_range_money = RangeMoney::all();
+            foreach ($user_model as $user) {
+                if (array_key_exists($user->id, $list_user)) {
+                    if (isset($temp_forces[$user->id])) {
+                        $number_force = ($user->force + $temp_forces[$user->id]->force);
+                    } else {
+                        $number_force = $user->force;
+                    }
+                    $get_money_value = self::GetNumberinterval($number_force);
+                    $item = [
+                        'withmoneyplan_id' => $model->id,
+                        'user_id' => $user->id,
+                        'money' => round($get_money_value, 3),
+                        'sort' => $list_user[$user->id]['num'] + 1,
+                        'number' => $list_user[$user->id]['num'] + 1,
+                        'created_at' => date('Y-m-d H:i:s'),
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ];
+                    array_push($datas, $item);
+                }
+            }//存储，等待用户领取
+            RewardUser::insert($datas);
+        }
     }
 
     private function CarveUp2($config, WithMoneyPlan $model)
@@ -149,11 +196,15 @@ class WithmoneyCommand extends Command
      * @param $last_id
      * 添加撒币计划
      */
-    private function AddPlan($config, $last_id)
+    private function AddPlan($config, $last_id, $money = false)
     {
         $set_number = (int)$config['set_time_money_number']->value;
         $number = User::where('login_time', date('Y-m-d'))->count('id');
-        $money = self::GetNumberinterval($number) * $number;
+        if ($money == false) {
+            $money = 0;
+        } else {
+            $money = self::GetNumberinterval($number) * $number;
+        }
         $invalid_time = $config['set_time_invalid_limit']->value;
         $dispense_invalid_time = $config['set_time_dispense_limit']->value;
         $data = [
@@ -201,7 +252,7 @@ class WithmoneyCommand extends Command
      */
     private function GetNumberinterval($number)
     {
-        $model = RangeMoney::all();
+        $model = $this->_range_money;
         $model_array = $model->toArray();
         $list = array_unique(array_merge(array_column($model_array, 'min'), array_column($model_array, 'max')));
         sort($list);
@@ -228,8 +279,10 @@ class WithmoneyCommand extends Command
             }
 
         }
-        $result = $model->where('min', $data['min'])->where('max', $data['max'])->first();
-        $res = rand($result->min_money * 100, $result->max_money * 100) / 100;
+        $result = array_first(array_where($model_array, function ($v) use ($data) {
+            return (($v['min'] == $data['min']) && ($v['min'] == $data['min']));
+        }));
+        $res = rand($result['min_money'] * 100, $result['max_money'] * 100) / 100;
         return $res;
     }
 
