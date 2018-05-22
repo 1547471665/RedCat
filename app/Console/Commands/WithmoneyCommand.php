@@ -41,8 +41,8 @@ class WithmoneyCommand extends Command
         self::ClearExpireWithPlan();//清除过期撒币计划
         if ($model = WithMoneyPlan::orderBy('id', 'desc')->first()) {//获取最后一条撒币记录
 //            self::CarveUp($this->_config, $model);//分币
-            self::CarveUp3($this->_config, $model);//分币
-            self::AddPlan($this->_config, $model->id);
+            $number = self::CarveUp3($this->_config, $model);//分币
+            self::AddPlan($this->_config, $model->id, $number);
         } else {
             self::AddPlan($this->_config, 0);
         }
@@ -90,7 +90,12 @@ class WithmoneyCommand extends Command
                     array_push($datas, $item);
                 }
             }//存储，等待用户领取
-            RewardUser::insert($datas);
+            if (!empty($datas)) {
+                RewardUser::insert($datas);
+                return array_sum(array_column($datas, 'money'));
+            } else {
+                return false;
+            }
         }
     }
 
@@ -200,9 +205,7 @@ class WithmoneyCommand extends Command
     {
         $set_number = (int)$config['set_time_money_number']->value;
         $number = User::where('login_time', date('Y-m-d'))->count('id');
-        if ($money == false) {
-            $money = 0;
-        } else {
+        if (!is_numeric($money)) {
             $money = self::GetNumberinterval($number) * $number;
         }
         $invalid_time = $config['set_time_invalid_limit']->value;
